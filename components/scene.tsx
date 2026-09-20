@@ -14,16 +14,20 @@ export default function Scene({
   night = false,
   theme = 'CREATIVE',
   onPick,
+  progress,
+  highlight,
 }: {
   kind: SceneKind;
   view?: string;
   night?: boolean;
   theme?: string;
   onPick?: (value: string) => void;
+  progress?: number;
+  highlight?: string;
 }) {
   const host = useRef<HTMLDivElement>(null);
-  const state = useRef({ view, night, theme, onPick });
-  state.current = { view, night, theme, onPick };
+  const state = useRef({ view, night, theme, onPick, progress, highlight });
+  state.current = { view, night, theme, onPick, progress, highlight };
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     const el = host.current!;
@@ -57,6 +61,11 @@ export default function Scene({
       ref={host}
       className={`scene scene-${kind}`}
       data-cursor={kind === 'house' || kind === 'room' ? 'DRAG' : undefined}
+      data-highlight={highlight}
+      data-progress={progress}
+      data-view={view}
+      data-night={night}
+      data-theme={theme}
       aria-label={`${kind} interactive 3D`}
     >
       <span className="scene-fallback">

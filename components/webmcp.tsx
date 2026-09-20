@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { flushSync } from 'react-dom';
-const themes = ['CORPORATE', 'LUXURY', 'CREATIVE', 'FUTURE', 'PLAYFUL'];
+import { projects } from '@/lib/portfolio';
 type Tool = {
   name: string;
   description: string;
@@ -10,9 +10,11 @@ type Tool = {
   execute: (input: unknown) => unknown;
 };
 export default function WebMCP({
-  setTheme,
+  selectProject,
+  setMobile,
 }: {
-  setTheme: (v: string) => void;
+  selectProject: (index: number) => void;
+  setMobile: (mobile: boolean) => void;
 }) {
   useEffect(() => {
     const context = (
@@ -31,13 +33,16 @@ export default function WebMCP({
       Promise.resolve(
         context.registerTool(
           {
-            name: 'configure_experience_theme',
+            name: 'preview_portfolio_project',
             description:
-              'Apply one of the five visual themes to the adaptive website demo.',
+              'Select a portfolio project and optionally its desktop or phone viewport in the live preview. This starts loading the selected page.',
             inputSchema: {
               type: 'object',
-              properties: { theme: { type: 'string', enum: themes } },
-              required: ['theme'],
+              properties: {
+                slug: { type: 'string', enum: projects.map((p) => p.slug) },
+                device: { type: 'string', enum: ['desktop', 'phone'] },
+              },
+              required: ['slug'],
               additionalProperties: false,
             },
             annotations: { readOnlyHint: false, untrustedContentHint: false },
@@ -45,19 +50,27 @@ export default function WebMCP({
               if (
                 !input ||
                 typeof input !== 'object' ||
-                !('theme' in input) ||
-                typeof input.theme !== 'string' ||
-                !themes.includes(input.theme)
+                !('slug' in input) ||
+                typeof input.slug !== 'string'
               )
-                throw new Error(
-                  'Choose CORPORATE, LUXURY, CREATIVE, FUTURE or PLAYFUL.',
-                );
-              const theme = input.theme;
-              flushSync(() => setTheme(theme));
-              document
-                .getElementById('adaptive')
-                ?.scrollIntoView({ behavior: 'instant' });
-              return { theme, applied: true };
+                throw new Error('A valid project slug is required.');
+              const index = projects.findIndex((p) => p.slug === input.slug);
+              if (index === -1) throw new Error('Project not found.');
+              if (
+                'device' in input &&
+                input.device !== 'desktop' &&
+                input.device !== 'phone'
+              )
+                throw new Error('Device must be desktop or phone.');
+              flushSync(() => {
+                selectProject(index);
+                if ('device' in input) setMobile(input.device === 'phone');
+              });
+              return {
+                selected: projects[index].slug,
+                url: `/works/${projects[index].slug}`,
+                navigationStarted: true,
+              };
             },
           },
           { signal: lifecycle.signal },
@@ -65,6 +78,6 @@ export default function WebMCP({
       ).catch(() => {});
     } catch {}
     return () => lifecycle.abort();
-  }, [setTheme]);
+  }, [selectProject, setMobile]);
   return null;
 }

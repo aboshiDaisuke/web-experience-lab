@@ -37,6 +37,11 @@ export function sculpture() {
 export function product() {
   const g = new T.Group();
   const body = new T.Mesh(new T.CylinderGeometry(0.82, 0.82, 2, 64), metal());
+  body.material = new T.MeshStandardMaterial({
+    color: 0xa8b1b5,
+    metalness: 0.92,
+    roughness: 0.32,
+  });
   body.name = 'shell';
   g.add(body);
   const base = new T.Mesh(
@@ -88,6 +93,79 @@ export function product() {
     line.name = 'groove';
     g.add(line);
   }
+  const copper = new T.MeshStandardMaterial({
+    color: 0xb17a49,
+    metalness: 0.86,
+    roughness: 0.3,
+  });
+  g.children
+    .filter((n) => n.name === 'coil')
+    .forEach((n) => {
+      (n as T.Mesh).material = copper.clone();
+    });
+  for (const y of [-0.94, 0.94]) {
+    const trim = new T.Mesh(new T.TorusGeometry(0.826, 0.018, 10, 80), metal());
+    trim.rotation.x = Math.PI / 2;
+    trim.position.y = y;
+    trim.name = 'shell';
+    g.add(trim);
+  }
+  for (const y of [-0.55, 0.55]) {
+    const driver = new T.Mesh(
+      new T.ConeGeometry(0.4, 0.16, 48),
+      new T.MeshStandardMaterial({
+        color: 0x171d20,
+        roughness: 0.82,
+        metalness: 0.15,
+      }),
+    );
+    driver.rotation.x = Math.PI / 2;
+    driver.position.set(0, y, 0.43);
+    driver.name = 'core';
+    g.add(driver);
+    const surround = new T.Mesh(
+      new T.TorusGeometry(0.4, 0.035, 10, 48),
+      new T.MeshStandardMaterial({ color: 0x12191b, roughness: 0.9 }),
+    );
+    surround.position.set(0, y, 0.5);
+    surround.name = 'core';
+    g.add(surround);
+    const dome = new T.Mesh(new T.SphereGeometry(0.12, 24, 16), metal());
+    dome.scale.set(1, 1, 0.45);
+    dome.position.set(0, y, 0.51);
+    dome.name = 'core';
+    g.add(dome);
+  }
+  for (let i = 0; i < 4; i++) {
+    const screw = new T.Mesh(
+      new T.CylinderGeometry(0.027, 0.027, 0.012, 12),
+      metal(),
+    );
+    screw.position.set(
+      Math.cos((i * Math.PI) / 2) * 0.55,
+      1.153,
+      Math.sin((i * Math.PI) / 2) * 0.55,
+    );
+    screw.name = 'top';
+    g.add(screw);
+  }
+  const board = box(g, [0.3, 0.65, 0.045], [0, -0.25, -0.49], 0x2f5946, 'core');
+  for (let i = 0; i < 4; i++)
+    box(
+      g,
+      [0.085, 0.09, 0.02],
+      [-0.07 + (i % 2) * 0.14, -0.45 + Math.floor(i / 2) * 0.28, -0.525],
+      0x192c25,
+      'core',
+    );
+  const seam = new T.Mesh(
+    new T.TorusGeometry(0.4, 0.006, 6, 60),
+    new T.MeshStandardMaterial({ color: 0x54636a, roughness: 0.8 }),
+  );
+  seam.rotation.x = Math.PI / 2;
+  seam.position.y = 1.152;
+  seam.name = 'top';
+  g.add(seam);
   return g;
 }
 export function house() {
@@ -109,6 +187,32 @@ export function house() {
   box(g, [1.2, 0.04, 2.8], [2.3, 0, 0.5], 0x457878);
   for (let i = 0; i < 7; i++)
     box(g, [0.22, 0.08, 3.2], [-2.8 + i * 0.12, 0.1, 0], 0x73634f);
+  for (let i = 0; i < 13; i++)
+    box(g, [0.06, 0.12, 3.2], [-2.15 + i * 0.35, 1.99, 0], 0xb2a38b, 'roof');
+  for (const x of [-1.7, -0.65]) {
+    box(g, [0.08, 0.22, 0.08], [x, 0.16, -0.35], 0x40382e);
+    box(g, [0.08, 0.22, 0.08], [x, 0.16, -0.8], 0x40382e);
+  }
+  const rug = box(g, [1.8, 0.018, 1.5], [-1.2, 0.15, 0.3], 0xaaa18e);
+  for (let i = 0; i < 11; i++)
+    box(g, [1.78, 0.003, 0.009], [-1.2, 0.161, -0.38 + i * 0.13], 0xc5baa4);
+  box(g, [0.4, 0.13, 0.35], [-1.5, 0.68, -0.57], 0xc3b499);
+  box(g, [0.38, 0.15, 0.33], [-0.95, 0.68, -0.58], 0x9e927c);
+  for (const x of [-2.8, 2.8])
+    for (const z of [-1.7, 1.7]) {
+      const foliage = new T.Mesh(
+        new T.IcosahedronGeometry(0.27, 1),
+        new T.MeshStandardMaterial({ color: 0x526549, roughness: 1 }),
+      );
+      foliage.position.set(x, 0.24, z);
+      foliage.scale.set(1, 1.3, 1);
+      g.add(foliage);
+    }
+  const water = box(g, [0.85, 0.025, 2.5], [2.42, 0.08, 0.35], 0x557f80);
+  (water.material as T.MeshStandardMaterial).roughness = 0.12;
+  (water.material as T.MeshStandardMaterial).metalness = 0.45;
+  for (let i = 0; i < 4; i++)
+    box(g, [0.65, 0.045, 0.12], [2.42, 0.1, -0.7 + i * 0.65], 0x83a1a0);
   return g;
 }
 export function room() {
@@ -145,5 +249,62 @@ export function room() {
   box(g, [0.8, 0.7, 0.1], [0.2, 0.95, 0.3], 0x41493f);
   box(g, [0.1, 0.6, 0.1], [0.2, 0.25, 0], 0x222822);
   box(g, [0.7, 1, 0.02], [1.6, 1.9, -1.91], 0xd9d28b);
+  box(g, [1.7, 0.025, 1.4], [0.2, 0.025, 0.05], 0xb5ae91);
+  for (let i = 0; i < 18; i++)
+    box(g, [4.96, 0.006, 0.012], [0, 0.003, -1.84 + i * 0.21], 0x756b56);
+  const pot = new T.Mesh(
+    new T.CylinderGeometry(0.18, 0.13, 0.36, 24),
+    new T.MeshStandardMaterial({ color: 0x83735c, roughness: 0.9 }),
+  );
+  pot.position.set(1.85, 0.18, -1.4);
+  g.add(pot);
+  const stem = new T.Mesh(
+    new T.CylinderGeometry(0.018, 0.025, 0.8, 8),
+    new T.MeshStandardMaterial({ color: 0x516644, roughness: 1 }),
+  );
+  stem.position.set(1.85, 0.68, -1.4);
+  g.add(stem);
+  for (let i = 0; i < 7; i++) {
+    const leaf = new T.Mesh(
+      new T.SphereGeometry(0.2, 12, 8),
+      new T.MeshStandardMaterial({
+        color: i % 2 ? 0x657853 : 0x435e39,
+        roughness: 0.9,
+      }),
+    );
+    leaf.scale.set(0.4, 1.5, 0.8);
+    leaf.position.set(
+      1.85 + Math.sin(i * 2) * 0.15,
+      0.65 + i * 0.045,
+      -1.4 + Math.cos(i * 2) * 0.15,
+    );
+    leaf.rotation.z = Math.sin(i * 2) * 0.8;
+    g.add(leaf);
+  }
+  box(g, [0.63, 0.025, 0.25], [0.25, 1.08, -0.93], 0x858f79, 'PC');
+  for (let i = 0; i < 8; i++)
+    box(
+      g,
+      [0.055, 0.006, 0.18],
+      [-0.005 + i * 0.071, 1.098, -0.94],
+      0x394538,
+      'PC',
+    );
+  const cup = new T.Mesh(
+    new T.CylinderGeometry(0.065, 0.055, 0.14, 20),
+    new T.MeshStandardMaterial({ color: 0xd9d5bd, roughness: 0.65 }),
+  );
+  cup.position.set(-0.35, 1.12, -1.17);
+  g.add(cup);
+  const cable = new T.CatmullRomCurve3([
+    new T.Vector3(0.25, 1.05, -1.5),
+    new T.Vector3(0.3, 0.8, -1.6),
+    new T.Vector3(0.45, 0.2, -1.65),
+  ]);
+  const cord = new T.Mesh(
+    new T.TubeGeometry(cable, 16, 0.012, 6, false),
+    new T.MeshStandardMaterial({ color: 0x2c3328 }),
+  );
+  g.add(cord);
   return g;
 }

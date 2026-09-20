@@ -9,6 +9,8 @@ type State = {
   night: boolean;
   theme: string;
   onPick?: (v: string) => void;
+  progress?: number;
+  highlight?: string;
 };
 export async function mountScene(
   el: HTMLDivElement,
@@ -99,8 +101,8 @@ export async function mountScene(
       .catch(() => {});
   camera.position.set(0, 0, 8);
   if (kind === 'hero') {
-    model.position.set(mobile ? 0.65 : 1.9, 0.25, 0);
-    model.scale.setScalar(mobile ? 1.1 : 1.25);
+    model.position.set(0, 0, 0);
+    model.scale.setScalar(mobile ? 0.8 : 0.9);
     camera.position.z = 9;
   }
   if (kind === 'house' || kind === 'room') camera.position.set(6, 4.8, 7);
@@ -126,7 +128,8 @@ export async function mountScene(
     dragging = false;
   let lastView = 'EXTERIOR',
     lastNight = false,
-    lastTheme = '';
+    lastTheme = '',
+    lastHighlight = '';
   let transition = false;
   const targetPos = new T.Vector3();
   const targetLook = new T.Vector3();
@@ -144,7 +147,7 @@ export async function mountScene(
   const up = (e: PointerEvent) => {
     dragging = false;
     if (
-      kind !== 'room' ||
+      !['room', 'product'].includes(kind) ||
       Math.hypot(e.clientX - dragStart[0], e.clientY - dragStart[1]) > 8
     )
       return;
@@ -156,7 +159,12 @@ export async function mountScene(
     ray.setFromCamera(pointer, camera);
     const hit = ray
       .intersectObject(model, true)
-      .find((h) => ['PC', 'CAMERA', 'BOOKS', 'TV'].includes(h.object.name));
+      .find((h) =>
+        (kind === 'product'
+          ? ['shell', 'core', 'coil', 'top', 'base']
+          : ['PC', 'CAMERA', 'BOOKS', 'TV']
+        ).includes(h.object.name),
+      );
     if (hit) get().onPick?.(hit.object.name);
   };
   el.addEventListener('pointermove', cursor);
@@ -170,15 +178,17 @@ export async function mountScene(
     const s = get();
     const rect = el.getBoundingClientRect();
     const time = performance.now() * 0.00015;
-    const progress = T.MathUtils.clamp(
-      -(el.closest('.product-scroll') || el).getBoundingClientRect().top /
-        Math.max(
-          1,
-          (el.closest('.product-scroll') || el).clientHeight - innerHeight,
-        ),
-      0,
-      1,
-    );
+    const progress =
+      s.progress ??
+      T.MathUtils.clamp(
+        -(el.closest('.product-scroll') || el).getBoundingClientRect().top /
+          Math.max(
+            1,
+            (el.closest('.product-scroll') || el).clientHeight - innerHeight,
+          ),
+        0,
+        1,
+      );
     if (kind === 'hero' || kind === 'final' || kind === 'capability') {
       model.rotation.y = reduced ? 0.25 : time + px * 0.15;
       model.rotation.x = reduced ? 0.2 : Math.sin(time) * 0.17 + py * 0.12;
@@ -211,11 +221,39 @@ export async function mountScene(
       model.rotation.z = s.theme === 'PLAYFUL' ? Math.sin(time) * 0.5 : 0;
     }
     if (kind === 'product') {
-      const explode = reduced
-        ? 0
-        : Math.sin(T.MathUtils.clamp((progress - 0.3) / 0.6, 0, 1) * Math.PI);
-      model.rotation.y = reduced ? 0 : progress * Math.PI * 1.6;
-      camera.position.z = 5.5 - Math.sin(progress * Math.PI) * 1.3;
+      if (s.highlight && s.highlight !== lastHighlight) {
+        lastHighlight = s.highlight;
+        model.traverse((node) => {
+          if (
+            node instanceof T.Mesh &&
+            node.material instanceof T.MeshStandardMaterial
+          ) {
+            node.material.emissive.setHex(
+              node.name === s.highlight ? 0x39575e : 0x000000,
+            );
+            node.material.emissiveIntensity =
+              node.name === s.highlight ? 0.6 : 0;
+          }
+        });
+      }
+      const explode =
+        s.progress !== undefined
+          ? progress
+          : reduced
+            ? 0
+            : Math.sin(
+                T.MathUtils.clamp((progress - 0.3) / 0.6, 0, 1) * Math.PI,
+              );
+      model.rotation.y =
+        s.progress !== undefined
+          ? progress * 0.6
+          : reduced
+            ? 0
+            : progress * Math.PI * 1.6;
+      camera.position.z =
+        s.progress !== undefined
+          ? 6.5
+          : 5.5 - Math.sin(progress * Math.PI) * 1.3;
       modelParts.forEach(({ node, start }, i) => {
         node.position.copy(start);
         if (node.name === 'shell' || node.name === 'groove')
@@ -312,7 +350,13 @@ export async function mountScene(
   mutation.observe(el.closest('section') || el, {
     attributes: true,
     subtree: true,
-    attributeFilter: ['data-view', 'data-night', 'data-theme'],
+    attributeFilter: [
+      'data-view',
+      'data-night',
+      'data-theme',
+      'data-progress',
+      'data-highlight',
+    ],
   });
   return () => {
     dead = true;

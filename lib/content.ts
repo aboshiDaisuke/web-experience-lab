@@ -1,7 +1,7 @@
 export const works = [
   {
     name: 'NOVA INDUSTRIES',
-    category: 'Corporate Website',
+    category: '企業サイト',
     image: 'architecture',
     tag: 'Precision meets progress.',
     description:
@@ -10,7 +10,7 @@ export const works = [
   },
   {
     name: 'LUMINA HAIR',
-    category: 'Beauty / Salon',
+    category: '美容室・サロン',
     image: 'fashion',
     tag: 'Your beauty, in motion.',
     description:
@@ -19,7 +19,7 @@ export const works = [
   },
   {
     name: 'NOIR TABLE',
-    category: 'Restaurant',
+    category: '飲食店',
     image: 'dining',
     tag: 'Taste the Story.',
     description:
@@ -28,7 +28,7 @@ export const works = [
   },
   {
     name: 'MAISON ÉCLAT',
-    category: 'Luxury Brand',
+    category: '高級ブランド',
     image: 'fashion',
     tag: 'The art of less.',
     description:
@@ -37,7 +37,7 @@ export const works = [
   },
   {
     name: 'AETHER ONE',
-    category: '3D Product',
+    category: '3D製品紹介',
     image: 'architecture',
     tag: 'Explore Every Detail.',
     description:
@@ -46,7 +46,7 @@ export const works = [
   },
   {
     name: 'CASA N01',
-    category: 'Architecture 3D',
+    category: '住宅・建築',
     image: 'architecture',
     tag: 'Walk Through Your Vision.',
     description:
@@ -55,7 +55,7 @@ export const works = [
   },
   {
     name: 'THE CREATIVE ROOM',
-    category: 'Virtual Space',
+    category: 'バーチャル空間',
     image: 'architecture',
     tag: 'Explore the Web.',
     description:
@@ -64,7 +64,7 @@ export const works = [
   },
   {
     name: 'YUI / VISUAL DIARY',
-    category: 'Creator Portfolio',
+    category: 'クリエイター',
     image: 'fashion',
     tag: 'A different point of view.',
     description:
@@ -73,7 +73,7 @@ export const works = [
   },
   {
     name: 'ADAPT / YOU',
-    category: 'AI Adaptive Website',
+    category: '好みに合わせるWEB',
     image: 'architecture',
     tag: 'A website that changes with you.',
     description:
@@ -82,7 +82,7 @@ export const works = [
   },
   {
     name: 'OFF THE GRID',
-    category: 'Campaign LP',
+    category: 'キャンペーンLP',
     image: 'dining',
     tag: 'Break your everyday.',
     description:
@@ -91,16 +91,16 @@ export const works = [
   },
 ];
 export const industries = [
-  'CORPORATE',
-  'BEAUTY',
-  'RESTAURANT',
-  'SHOP',
-  'HOTEL',
-  'REAL ESTATE',
-  'MANUFACTURING',
-  'CREATOR',
-  'MEDICAL',
-  'SCHOOL',
-  'PERSONAL BRAND',
-  'CAMPAIGN LP',
+  '企業・コーポレート',
+  '美容室・サロン',
+  '飲食店・レストラン',
+  'ショップ・ブランド',
+  'ホテル・宿泊施設',
+  '不動産・住宅',
+  '製造業',
+  'クリエイター',
+  '医療・クリニック',
+  '学校・教育',
+  '個人・専門家',
+  'キャンペーンLP',
 ];
