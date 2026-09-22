@@ -1,265 +1,195 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import {
-  ArrowUpRight,
-  ArrowLeft,
-  ArrowRight,
-  Monitor,
-  Smartphone,
-  RotateCcw,
-  Maximize2,
-  MousePointer2,
-} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowUpRight, Plus } from 'lucide-react';
 import { projects } from '@/lib/portfolio';
-import WebMCP from '@/components/webmcp';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { services, plans, steps, faqs } from '@/lib/studio';
+import Hero from '@/components/studio/hero';
+import Works from '@/components/studio/works';
+import LivePreview from '@/components/studio/live-preview';
+import Contact from '@/components/studio/contact';
+
+const nav = [
+  ['作品', '#works'],
+  ['触って試す', '#try'],
+  ['できること', '#services'],
+  ['料金', '#plans'],
+  ['制作の流れ', '#process'],
+];
+const byslug = (slug: string) => projects.find((p) => p.slug === slug)!;
+
 export default function Home() {
-  const [selected, setSelected] = useState(0);
-  const [mobile, setMobile] = useState(false);
-  const [scale, setScale] = useState(1);
-  const [version, setVersion] = useState(0);
-  const [info, setInfo] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const stage = useRef<HTMLDivElement>(null);
-  const frame = useRef<HTMLIFrameElement>(null);
-  const [chapter, setChapter] = useState('top');
-  const project = projects[selected];
+  const [preview, setPreview] = useState(0);
+  const [refSlug, setRefSlug] = useState('');
+  const [solid, setSolid] = useState(false);
   useEffect(() => {
+    const ref = new URLSearchParams(location.search).get('ref');
+    if (ref && projects.some((p) => p.slug === ref)) setRefSlug(ref);
     const saved = Number(sessionStorage.getItem('lab-selection'));
-    if (saved >= 0 && saved < projects.length) setSelected(saved);
+    if (saved > 0 && saved < projects.length) setPreview(saved);
+    const onScroll = () => setSolid(scrollY > innerHeight * 0.8);
+    onScroll();
+    addEventListener('scroll', onScroll, { passive: true });
+    return () => removeEventListener('scroll', onScroll);
   }, []);
-  useEffect(() => {
-    sessionStorage.setItem('lab-selection', String(selected));
-    setLoading(true);
-    setChapter('top');
-  }, [selected, version]);
-  useEffect(() => {
-    const el = stage.current!;
-    const resize = () =>
-      setScale(
-        Math.min(
-          (el.clientWidth - 32) / (mobile ? 390 : 1280),
-          (el.clientHeight - 24) / (mobile ? 844 : 800),
-        ),
-      );
-    const ro = new ResizeObserver(resize);
-    ro.observe(el);
-    resize();
-    return () => ro.disconnect();
-  }, [mobile]);
-  const select = (i: number) =>
-    setSelected((i + projects.length) % projects.length);
+  const selectPreview = (i: number) => {
+    setPreview(i);
+    try {
+      sessionStorage.setItem('lab-selection', String(i));
+    } catch {}
+  };
+  const consult = (slug: string) => {
+    setRefSlug(slug);
+    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+  };
   return (
-    <main className="showroom">
-      <WebMCP selectProject={setSelected} setMobile={setMobile} />
-      <header className="lab-header">
-        <a href="/" className="lab-logo">
-          <b>
-            W/E<span>®</span>
-          </b>
-          <span>
-            WEB EXPERIENCE LAB
-            <br />
-            <small>デザインの可能性を、ここから。</small>
-          </span>
+    <main className="studio">
+      <a className="st-skip" href="#works">
+        作品一覧へ移動
+      </a>
+      <header className={`st-header ${solid ? 'is-solid' : ''}`}>
+        <a href="/" className="st-logo" aria-label="Web Experience Lab トップへ">
+          <b>W/E</b>
+          <span>Web Experience Lab</span>
         </a>
-        <div className="lab-header-right">
-          <span className="local-note">
-            <i />
-            INTERACTIVE SHOWROOM
-          </span>
-          <button onClick={() => setInfo(true)}>
-            このサイトについて <ArrowUpRight size={15} />
-          </button>
-        </div>
-      </header>
-      <div className="lab-intro">
-        <div>
-          <span className="overline">SELECTED WORKS — 2026</span>
-          <h1>
-            選んで、触れて、<span>体験する。</span>
-          </h1>
-        </div>
-        <p>
-          10の業種、10の異なる世界観。
-          <br />
-          気になる作品を選び、そのまま操作してみてください。
-        </p>
-        <div className="work-counter">
-          <b>10</b>
-          <span>EXPERIENCES</span>
-        </div>
-      </div>
-      <div className="showroom-body">
-        <aside className="project-index" aria-label="作品一覧">
-          <div className="index-label">
-            <span>制作サンプル</span>
-            <span>01—10</span>
-          </div>
-          <div className="project-buttons">
-            {projects.map((p, i) => (
-              <button
-                key={p.slug}
-                aria-pressed={selected === i}
-                className={selected === i ? 'selected' : ''}
-                onClick={() => select(i)}
-              >
-                <span className="project-number">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <img src={`/images/${p.image}.jpg`} alt="" />
-                <span className="project-text">
-                  <b>{p.name}</b>
-                  <small>{p.category}</small>
-                </span>
-                <ArrowUpRight size={16} />
-              </button>
-            ))}
-          </div>
-          <div className="index-bottom">
-            <span className="index-dot" />
-            すべての作品を、この画面で。
-          </div>
-        </aside>
-        <section
-          className="preview-panel"
-          aria-label="選んだサイトのプレビュー"
-        >
-          <div className="preview-toolbar">
-            <div className="window-dots">
-              <i />
-              <i />
-              <i />
-            </div>
-            <div
-              className="preview-chapters"
-              aria-label="ページ内の見どころへ移動"
-            >
-              {[
-                ['top', 'トップ'],
-                ['story', 'コンセプト'],
-                ['details', '詳しく見る'],
-                ['features', '特集・体験'],
-              ].map(([id, label]) => (
-                <button
-                  key={id}
-                  aria-pressed={chapter === id}
-                  onClick={() => {
-                    setChapter(id);
-                    frame.current?.contentWindow?.postMessage(
-                      { type: 'lab-jump', id },
-                      location.origin,
-                    );
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="device-buttons">
-              <button
-                aria-label="PC表示"
-                aria-pressed={!mobile}
-                onClick={() => setMobile(false)}
-              >
-                <Monitor size={16} />
-              </button>
-              <button
-                aria-label="スマートフォン表示"
-                aria-pressed={mobile}
-                onClick={() => setMobile(true)}
-              >
-                <Smartphone size={16} />
-              </button>
-              <span />
-              <button
-                aria-label="プレビューを再読み込み"
-                onClick={() => setVersion((v) => v + 1)}
-              >
-                <RotateCcw size={15} />
-              </button>
-              <a href={`/works/${project.slug}`} aria-label="作品ページを開く">
-                <Maximize2 size={15} />
-              </a>
-            </div>
-          </div>
-          <div className="preview-stage" ref={stage}>
-            {loading && (
-              <div className="preview-loading" role="status">
-                {project.name}
-                <span>ページを読み込んでいます</span>
-              </div>
-            )}
-            <div
-              className={`preview-viewport ${mobile ? 'phone' : ''}`}
-              style={{
-                width: mobile ? 390 : 1280,
-                height: mobile ? 844 : 800,
-                transform: `translate(-50%,-50%) scale(${Math.max(0.1, scale)})`,
-              }}
-            >
-              <iframe
-                ref={frame}
-                key={`${project.slug}-${version}`}
-                src={`/works/${project.slug}?embed=1`}
-                title={`${project.name} 操作できるプレビュー`}
-                onLoad={() => setLoading(false)}
-              />
-            </div>
-          </div>
-          <div className="preview-caption">
-            <div>
-              <span>{project.type}</span>
-              <h2>
-                {project.category}
-                <small> / {project.name}</small>
-              </h2>
-              <p>
-                <MousePointer2 size={14} />
-                {project.note}
-              </p>
-            </div>
-            <a className="open-project" href={`/works/${project.slug}`}>
-              サイトを開く <ArrowUpRight size={18} />
+        <nav aria-label="ページ内">
+          {nav.map(([label, href]) => (
+            <a key={href} href={href}>
+              {label}
             </a>
-          </div>
-        </section>
-      </div>
-      <footer className="lab-footer">
-        <span>
-          © WEB EXPERIENCE LAB <span className="footer-slash">/</span>{' '}
-          すべて架空ブランドの制作サンプルです。
-        </span>
-        <div>
-          <button aria-label="前の作品" onClick={() => select(selected - 1)}>
-            <ArrowLeft size={16} />
-          </button>
-          <span>{String(selected + 1).padStart(2, '0')} / 10</span>
-          <button aria-label="次の作品" onClick={() => select(selected + 1)}>
-            <ArrowRight size={16} />
-          </button>
-        </div>
-        <span>DESIGN × TECHNOLOGY</span>
-      </footer>
-      <Dialog open={info} onOpenChange={setInfo}>
-        <DialogContent className="demo-dialog">
-          <DialogTitle>WEB EXPERIENCE LAB</DialogTitle>
-          <DialogDescription>
-            WEB制作の表現と操作を試せるショールームです。10作品それぞれに独立したページがあります。ブランド・商品・料金はすべて架空で、予約や購入の操作はデモです。
-          </DialogDescription>
+          ))}
+        </nav>
+        <a className="st-header-cta" href="#contact">
+          制作を相談する
+        </a>
+      </header>
+
+      <Hero />
+      <Works onConsult={consult} />
+      <LivePreview selected={preview} onSelect={selectPreview} />
+
+      <section id="services" className="st-services" aria-labelledby="services-title">
+        <div className="st-section-head">
+          <h2 id="services-title">できること</h2>
           <p>
-            画面左の一覧から作品を選び、中央で操作できます。「サイトを開く」で個別ページへ移動します。
+            デザインだけ、実装だけ、ではなく。見た目を決めるところから、予約や問い合わせが届くところまで一貫してつくります。
           </p>
-          <a className="solid-button" href="/works/nova">
-            企業サイトから見る <ArrowUpRight size={18} />
-          </a>
-        </DialogContent>
-      </Dialog>
+        </div>
+        <ol className="st-service-list">
+          {services.map((s) => {
+            const ex = byslug(s.example);
+            return (
+              <li key={s.title}>
+                <h3>
+                  {s.title.split('|').map((t, i) => (
+                    <span key={i}>
+                      {i > 0 && <wbr />}
+                      {t}
+                    </span>
+                  ))}
+                </h3>
+                <p>{s.body}</p>
+                <a href={`/works/${ex.slug}`} className="st-service-example">
+                  <img src={`/images/works/${ex.slug}-mobile.jpg`} alt="" loading="lazy" />
+                  <span>
+                    作品例
+                    <b>{ex.name}</b>
+                  </span>
+                  <ArrowUpRight size={16} />
+                </a>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      <section id="plans" className="st-plans" aria-labelledby="plans-title">
+        <div className="st-section-head">
+          <h2 id="plans-title">料金の目安</h2>
+          <p>
+            ページ数や機能によって変わるため、正式な金額はご相談のあとにお見積りします。いずれも税別です。
+          </p>
+        </div>
+        <div className="st-plan-grid">
+          {plans.map((plan) => {
+            const ex = byslug(plan.example);
+            return (
+              <article key={plan.name} className="st-plan">
+                <h3>{plan.name}</h3>
+                <p className="st-plan-fit">{plan.fit}</p>
+                <p className="st-plan-price">
+                  {plan.price}
+                  <span>{plan.period}</span>
+                </p>
+                <ul>
+                  {plan.items.map((it) => (
+                    <li key={it}>{it}</li>
+                  ))}
+                </ul>
+                <a href={`/works/${ex.slug}`} className="st-plan-example">
+                  <img src={`/images/works/${ex.slug}-desktop.jpg`} alt="" loading="lazy" />
+                  <span>
+                    近い作品 <b>{ex.name}</b>
+                  </span>
+                </a>
+                <a
+                  className="st-btn st-btn-outline"
+                  href="#contact"
+                  onClick={() => setRefSlug(ex.slug)}
+                >
+                  このプランで相談する
+                </a>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="process" className="st-process" aria-labelledby="process-title">
+        <div className="st-section-head">
+          <h2 id="process-title">制作の流れ</h2>
+          <p>ご相談から公開まで、ブランドサイトでおよそ6〜8週間です。</p>
+        </div>
+        <ol className="st-steps">
+          {steps.map((s, i) => (
+            <li key={s.title}>
+              <span className="st-step-no">{i + 1}</span>
+              <h3>{s.title}</h3>
+              <span className="st-step-period">{s.period}</span>
+              <p>{s.body}</p>
+            </li>
+          ))}
+        </ol>
+        <div className="st-faq">
+          <h3>よくあるご質問</h3>
+          {faqs.map((f) => (
+            <details key={f.q}>
+              <summary>
+                {f.q}
+                <Plus size={18} aria-hidden />
+              </summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <Contact refSlug={refSlug} setRefSlug={setRefSlug} />
+
+      <footer className="st-footer">
+        <a href="/" className="st-logo">
+          <b>W/E</b>
+          <span>Web Experience Lab</span>
+        </a>
+        <nav aria-label="フッター">
+          {nav.map(([label, href]) => (
+            <a key={href} href={href}>
+              {label}
+            </a>
+          ))}
+          <a href="#contact">相談する</a>
+        </nav>
+        <p>掲載作品のブランド・人物・価格はすべて架空の制作サンプルです。© 2026 Web Experience Lab</p>
+      </footer>
     </main>
   );
 }
