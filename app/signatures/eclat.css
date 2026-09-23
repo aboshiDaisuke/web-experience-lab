@@ -1,0 +1,86 @@
+/* eclat signature — scope every rule under .site-eclat */
+
+/* the seam is drawn on a viewport-sized canvas above the page */
+.site-eclat .ecl-seam {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* product panel: the bag is lifted out of its photograph */
+.site-eclat .eclat-product[data-ecl-stage] > img {
+  opacity: 0;
+}
+.site-eclat .ecl-stage {
+  position: absolute;
+  pointer-events: none;
+}
+.site-eclat .ecl-stage > *,
+.site-eclat .ecl-bag > * {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.site-eclat .ecl-ground {
+  background:
+    radial-gradient(
+      ellipse 36% 2.6% at 52% 90.6%,
+      rgba(60, 44, 30, 0.2),
+      rgba(60, 44, 30, 0) 100%
+    ),
+    #efefef;
+}
+.site-eclat .ecl-grain {
+  box-sizing: border-box;
+  padding: 26px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.24' numOctaves='2' seed='11' stitchTiles='stitch'/%3E%3CfeDiffuseLighting lighting-color='%23fff' surfaceScale='2.4' diffuseConstant='1.12'%3E%3CfeDistantLight azimuth='235' elevation='62'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E")
+      0 0 / 130px,
+    #d9cdbd;
+  mix-blend-mode: multiply;
+  opacity: 0.32;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+.site-eclat .ecl-bag {
+  transform-origin: 52% 88%;
+  will-change: transform;
+}
+.site-eclat .ecl-sheen {
+  opacity: 0;
+  background: radial-gradient(
+    circle at var(--sx, 50%) var(--sy, 46%),
+    rgba(255, 238, 214, 0.3),
+    rgba(255, 238, 214, 0.08) 20%,
+    rgba(255, 238, 214, 0) 38%
+  );
+  mix-blend-mode: screen;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+.site-eclat .ecl-ground,
+.site-eclat .ecl-cut {
+  transition: filter 0.8s;
+}
+.site-eclat .eclat-cover.color-1 .ecl-ground,
+.site-eclat .eclat-cover.color-1 .ecl-cut {
+  filter: brightness(0.62) saturate(0.65);
+}
+.site-eclat .eclat-cover.color-2 .ecl-ground,
+.site-eclat .eclat-cover.color-2 .ecl-cut {
+  filter: hue-rotate(29deg) saturate(0.43) brightness(0.86);
+}
+@media (max-width: 760px) {
+  .site-eclat .ecl-grain {
+    padding: 18px;
+  }
+}

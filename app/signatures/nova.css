@@ -1,0 +1,186 @@
+/* nova signature — scope every rule under .site-nova */
+
+/* The photo waits on the drawing board until the inspection view is ready;
+   without the script it simply fades in. */
+.site-nova .nova-cover-photo:not([data-nova-sig]) > img {
+  opacity: 0;
+  animation: nova-sig-fallback 0.8s ease 3.2s forwards;
+}
+.site-nova .nova-cover-photo:not([data-nova-sig]),
+.site-nova .nova-cover-photo[data-nova-sig="live"] {
+  background: #08182a;
+}
+@keyframes nova-sig-fallback {
+  to {
+    opacity: 1;
+  }
+}
+.site-nova .nova-cover-photo[data-nova-sig="off"] > img {
+  opacity: 1;
+  animation: none;
+}
+.site-nova .nova-cover-photo[data-nova-sig="live"] > img {
+  opacity: 0;
+  animation: none;
+}
+.site-nova .nova-cover-photo[data-nova-sig="live"] {
+  cursor: crosshair;
+}
+.site-nova .nova-cover-photo[data-nova-sig="live"] > span {
+  z-index: 2;
+  color: #9fc0dc;
+}
+
+.site-nova .nova-sig-canvas,
+.site-nova .nova-sig-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+.site-nova .nova-sig-canvas {
+  z-index: 0;
+  transition: opacity 0.5s ease;
+}
+.site-nova .nova-cover-photo:not([data-nova-ready]) .nova-sig-canvas {
+  opacity: 0;
+}
+.site-nova .nova-sig-overlay {
+  z-index: 1;
+  overflow: visible;
+}
+
+/* ruler figures */
+.site-nova .nova-sig-overlay .ruler text {
+  fill: #7fa6c6;
+  font:
+    8px/1 "SF Mono",
+    Menlo,
+    Consolas,
+    monospace;
+  letter-spacing: 0.02em;
+}
+.site-nova .nova-sig-overlay .ruler .ry {
+  writing-mode: vertical-rl;
+  transform-box: fill-box;
+}
+
+/* measuring points and the dimension line */
+.site-nova .nova-sig-overlay .pt circle,
+.site-nova .nova-sig-overlay .pt line {
+  fill: none;
+  stroke: #ffd48a;
+  stroke-width: 1;
+}
+.site-nova .nova-sig-overlay .pt-t {
+  fill: #ffd48a;
+  font:
+    600 9px/1 "SF Mono",
+    Menlo,
+    Consolas,
+    monospace;
+}
+.site-nova .nova-sig-overlay .dimline line {
+  stroke: #ffd48a;
+  stroke-width: 1;
+}
+.site-nova .nova-sig-overlay .dimline .ext {
+  opacity: 0.6;
+}
+.site-nova .nova-sig-overlay .dimline .arrow {
+  fill: #ffd48a;
+}
+.site-nova .nova-sig-overlay .val rect {
+  fill: #08182ae6;
+  stroke: #ffd48a;
+  stroke-width: 0.8;
+}
+.site-nova .nova-sig-overlay .val text {
+  fill: #ffe2ad;
+  font:
+    500 10.5px/1 "SF Mono",
+    Menlo,
+    Consolas,
+    monospace;
+  letter-spacing: 0.02em;
+}
+.site-nova .nova-sig-overlay .leader {
+  stroke: #b7d8f2;
+  stroke-width: 0.8;
+}
+
+/* live coordinate readout that travels with the lens */
+.site-nova .nova-sig-readout {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  gap: 3px;
+  min-width: 92px;
+  padding: 7px 9px 6px;
+  border-left: 1px solid #b7d8f2;
+  background: #061426f2;
+  box-shadow: 0 6px 18px #0006;
+  color: #dcecf9;
+  font:
+    10px/1.15 "SF Mono",
+    Menlo,
+    Consolas,
+    monospace;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  will-change: transform;
+}
+.site-nova .nova-sig-readout > span {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+.site-nova .nova-sig-readout b {
+  font-weight: 400;
+  color: #7fa6c6;
+}
+.site-nova .nova-sig-readout .u {
+  margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px solid #b7d8f233;
+  color: #7fa6c6;
+}
+.site-nova .nova-sig-readout .u em {
+  font-style: normal;
+  color: #ffd48a;
+}
+.site-nova .nova-sig-readout .u i {
+  font-style: normal;
+}
+
+.site-nova .nova-sig-hint {
+  position: absolute;
+  left: 26px;
+  top: 26px;
+  z-index: 2;
+  margin: 0;
+  padding: 5px 9px;
+  background: #08182acc;
+  color: #b7d8f2;
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .site-nova .nova-sig-hint {
+    left: 22px;
+    top: 22px;
+    font-size: 10px;
+  }
+  .site-nova .nova-sig-readout {
+    min-width: 80px;
+    font-size: 9px;
+    padding: 5px 7px 4px;
+  }
+}

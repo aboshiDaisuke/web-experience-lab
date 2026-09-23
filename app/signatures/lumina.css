@@ -1,0 +1,21 @@
+/* lumina signature — scope every rule under .site-lumina */
+.site-lumina .lumina-silk-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.site-lumina .lumina-photo.is-silk .lumina-silk-canvas {
+  opacity: 1;
+}
+.site-lumina .lumina-photo.lumina-silk img {
+  visibility: hidden;
+  transition: visibility 0s 0.5s;
+}
+.site-lumina .lumina-photo.lumina-silk {
+  touch-action: pan-y;
+}

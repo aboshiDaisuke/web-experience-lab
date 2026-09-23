@@ -1,0 +1,265 @@
+/* yui signature — scope every rule under .site-yui */
+
+/* the prints are latent until the developer reaches them */
+@media (prefers-reduced-motion: no-preference) {
+  .site-yui .yui-cover img {
+    animation: yui-latent 2.6s steps(1, end) both;
+  }
+}
+@keyframes yui-latent {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.site-yui .yui-cover img[data-yui-developed] {
+  animation: none;
+}
+.site-yui.yui-developing .yui-cover img:not([data-yui-developed]) {
+  animation: none;
+  opacity: 0;
+}
+@media (min-width: 761px) {
+  .site-yui .yui-small-photo {
+    position: relative;
+  }
+}
+.site-yui .yui-dev-canvas {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  display: block;
+}
+
+.site-yui .yui-cover img,
+.site-yui .photo-grid img {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.site-yui .yui-cover img {
+  transition: filter 0.35s ease;
+}
+.site-yui .yui-vf-target {
+  clip-path: inset(0);
+}
+@media (pointer: fine) {
+  .site-yui .yui-vf-target {
+    cursor: none;
+  }
+}
+
+/* viewfinder */
+.site-yui .yui-vf {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 42;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  will-change: transform;
+  font-family: 'Helvetica Neue', Arial, 'Hiragino Sans', sans-serif;
+}
+.site-yui .yui-vf.is-on {
+  opacity: 1;
+}
+.site-yui .yui-vf > * {
+  position: absolute;
+}
+.site-yui .yui-vf-lens {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.28);
+}
+.site-yui .yui-vf-flash {
+  inset: 0;
+  background: #fffaf0;
+  opacity: 0;
+}
+.site-yui .yui-vf-iris {
+  inset: 0;
+  overflow: hidden;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.35));
+}
+.site-yui .yui-vf-frame {
+  inset: 0;
+  overflow: visible;
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.95);
+  stroke-width: 1.3;
+  filter: drop-shadow(0 0 1.5px rgba(30, 24, 18, 0.55));
+  transition: transform 0.32s cubic-bezier(0.3, 1.8, 0.4, 1);
+}
+.site-yui .yui-vf-frame .yui-vf-grid {
+  stroke-width: 1;
+  stroke: rgba(255, 255, 255, 0.55);
+}
+.site-yui .yui-vf.is-locked .yui-vf-frame {
+  transform: scale(0.965);
+}
+.site-yui .yui-vf-af {
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 14px;
+  margin: -7px 0 0 -10px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 1.5px rgba(30, 24, 18, 0.55);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.site-yui .yui-vf.is-locked .yui-vf-af {
+  border-color: #f08a63;
+  box-shadow:
+    0 0 0 0.5px #f08a63,
+    0 0 6px rgba(240, 138, 99, 0.6);
+}
+.site-yui .yui-vf-af i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  opacity: 0;
+}
+.site-yui .yui-vf-read,
+.site-yui .yui-vf-count,
+.site-yui .yui-vf-hint {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 0 3px rgba(20, 16, 12, 0.7);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.site-yui .yui-vf-read {
+  left: 9px;
+  bottom: 8px;
+  display: flex;
+  gap: 10px;
+}
+.site-yui .yui-vf-read b {
+  font-weight: 400;
+}
+.site-yui .yui-vf-count {
+  right: 9px;
+  bottom: 8px;
+}
+.site-yui .yui-vf-hint {
+  left: 9px;
+  top: 9px;
+  letter-spacing: 0.08em;
+  font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  opacity: 0.85;
+}
+.site-yui .yui-page-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: #fffdf7;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* contact strip */
+.site-yui .yui-film {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  max-width: calc(100% - 40px);
+  padding: 15px 12px 15px 6px;
+  border-radius: 2px;
+  background:
+    linear-gradient(90deg, rgba(236, 226, 205, 0.82) 0 5px, transparent 5px) 4px
+      5px / 11px 5px repeat-x,
+    linear-gradient(90deg, rgba(236, 226, 205, 0.82) 0 5px, transparent 5px) 4px
+      calc(100% - 5px) / 11px 5px repeat-x,
+    linear-gradient(180deg, #2a221b, #1b1714);
+  box-shadow:
+    0 22px 40px -22px rgba(20, 14, 8, 0.75),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  transform: translateY(calc(100% + 120px));
+  visibility: hidden;
+  transition:
+    transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s 0.7s;
+}
+.site-yui .yui-film.is-on {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.site-yui .yui-film-close {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-right: 6px;
+  border: 0;
+  background: none;
+  color: rgba(236, 226, 205, 0.6);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.site-yui .yui-film-close:hover,
+.site-yui .yui-film-close:focus-visible {
+  color: #efe4cf;
+}
+.site-yui .yui-film-track {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+.site-yui .yui-film-frame {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.site-yui .yui-film-shot {
+  display: block;
+  width: 88px;
+  height: 59px;
+  border-radius: 1px;
+}
+.site-yui .yui-film-frame small {
+  font:
+    7px/1 Arial,
+    sans-serif;
+  letter-spacing: 0.14em;
+  color: #d8964a;
+  white-space: pre;
+  opacity: 0.85;
+}
+.site-yui .yui-fly {
+  position: fixed;
+  z-index: 41;
+  pointer-events: none;
+  transform-origin: 0 0;
+  box-shadow: 0 14px 34px -12px rgba(25, 18, 10, 0.55);
+}
+@media (max-width: 760px) {
+  .site-yui:not(.is-embedded) .yui-film {
+    left: 12px;
+    bottom: 86px;
+    max-width: calc(100% - 24px);
+  }
+  .site-yui .yui-film-shot {
+    width: 62px;
+    height: 41px;
+  }
+}

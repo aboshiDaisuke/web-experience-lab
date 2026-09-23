@@ -1,0 +1,365 @@
+/* offgrid signature — scope every rule under .site-offgrid */
+
+/* pre-hydration: arrive already "indoors" (grey, blurred) so the clean hero
+   never flashes before the pile lands. Reduced motion keeps the clean hero. */
+@media (prefers-reduced-motion: no-preference) {
+  .site-offgrid .offgrid-cover > img:not(.og-clear) {
+    filter: grayscale(0.92) blur(11px) brightness(0.66) contrast(0.86);
+    transform: scale(1.1);
+  }
+  .site-offgrid .offgrid-cover > h1 {
+    opacity: 0.5;
+  }
+  .site-offgrid .offgrid-cover > .offgrid-topline,
+  .site-offgrid .offgrid-cover > .offgrid-bottom {
+    opacity: 0;
+  }
+}
+.site-offgrid .offgrid-cover.og-armed > img:not(.og-clear) {
+  will-change: transform;
+}
+.site-offgrid .offgrid-cover > img.og-clear {
+  position: absolute;
+  inset: 0;
+  object-position: center 65%;
+  filter: brightness(0.82) saturate(1.12);
+  pointer-events: none;
+  will-change: transform, mask-image;
+}
+.site-offgrid .og-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 40%, #5d666e33, #20262c99),
+    linear-gradient(180deg, #3b434a55, #1c21266e);
+  mix-blend-mode: multiply;
+}
+.site-offgrid .og-pile {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  perspective: 1100px;
+  z-index: 3;
+}
+.site-offgrid .og-wind {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* ---------- notification cards (generic, fictional) ---------- */
+.site-offgrid .og-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 11px 14px 12px;
+  border-radius: 18px;
+  background: rgba(246, 247, 248, 0.93);
+  color: #1d2126;
+  font-family:
+    -apple-system, 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 14px 34px -10px rgba(12, 16, 20, 0.45),
+    0 2px 6px rgba(12, 16, 20, 0.12);
+  transform-origin: 30% 50%;
+  backface-visibility: visible;
+  will-change: transform;
+}
+.site-offgrid .og-card--desk {
+  border-radius: 9px;
+  background: rgba(238, 240, 242, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  padding: 10px 12px 11px;
+}
+.site-offgrid .og-card--stack::before,
+.site-offgrid .og-card--stack::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -7px;
+  height: 14px;
+  border-radius: 0 0 16px 16px;
+  background: rgba(228, 231, 234, 0.82);
+  z-index: -1;
+  box-shadow: 0 6px 14px -6px rgba(12, 16, 20, 0.35);
+}
+.site-offgrid .og-card--stack::after {
+  left: 20px;
+  right: 20px;
+  bottom: -13px;
+  background: rgba(214, 218, 222, 0.7);
+  z-index: -2;
+}
+.site-offgrid .og-card.og-lift {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 30px 50px -16px rgba(12, 16, 20, 0.5);
+}
+.site-offgrid .og-card-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  color: #6b727a;
+  letter-spacing: 0.02em;
+}
+.site-offgrid .og-card-head > span {
+  flex: 1;
+}
+.site-offgrid .og-card-head > time {
+  font-size: 10px;
+  color: #8b9198;
+}
+.site-offgrid .og-ico {
+  position: relative;
+  width: 19px;
+  height: 19px;
+  border-radius: 5.5px;
+  background: var(--tone);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.site-offgrid .og-card--desk .og-ico {
+  border-radius: 50%;
+}
+.site-offgrid .og-ico svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.site-offgrid .og-badge {
+  position: absolute;
+  top: -6px;
+  right: -9px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #e5484d;
+  color: #fff;
+  font:
+    700 8.5px/15px Arial,
+    sans-serif;
+  font-style: normal;
+  text-align: center;
+  box-shadow: 0 0 0 1.5px rgba(246, 247, 248, 0.95);
+}
+.site-offgrid .og-card > b {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.site-offgrid .og-card > p {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #474e56;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.site-offgrid .og-card > small {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+  color: #8b9198;
+}
+.site-offgrid .og-pile.og-shiver {
+  animation: og-shiver 0.42s linear;
+}
+@keyframes og-shiver {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translate3d(1.2px, 0, 0);
+  }
+  40% {
+    transform: translate3d(-1.2px, 0.4px, 0);
+  }
+  60% {
+    transform: translate3d(0.9px, -0.3px, 0);
+  }
+  80% {
+    transform: translate3d(-0.6px, 0, 0);
+  }
+}
+
+/* ---------- the "phone" status bar that gives way to the event's topline ---------- */
+.site-offgrid .og-status {
+  position: absolute;
+  top: 22px;
+  left: 6%;
+  right: 6%;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.9);
+  font:
+    600 13px -apple-system,
+    'Hiragino Sans',
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.25);
+}
+.site-offgrid .og-status-r {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.site-offgrid .og-bars {
+  display: flex;
+  align-items: end;
+  gap: 2px;
+  height: 11px;
+}
+.site-offgrid .og-bars b {
+  width: 3px;
+  background: currentColor;
+  border-radius: 1px;
+}
+.site-offgrid .og-bars b:nth-child(1) {
+  height: 4px;
+}
+.site-offgrid .og-bars b:nth-child(2) {
+  height: 6px;
+}
+.site-offgrid .og-bars b:nth-child(3) {
+  height: 8px;
+  opacity: 0.35;
+}
+.site-offgrid .og-bars b:nth-child(4) {
+  height: 11px;
+  opacity: 0.35;
+}
+.site-offgrid .og-batt {
+  position: relative;
+  width: 24px;
+  height: 11px;
+  border: 1.4px solid currentColor;
+  border-radius: 3.5px;
+  opacity: 0.95;
+}
+.site-offgrid .og-batt::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 3px;
+  width: 2px;
+  height: 3.5px;
+  border-radius: 0 1px 1px 0;
+  background: currentColor;
+}
+.site-offgrid .og-batt b {
+  position: absolute;
+  inset: 1.5px auto 1.5px 1.5px;
+  width: 4px;
+  border-radius: 1px;
+  background: #ff5b4f;
+}
+
+/* ---------- the invitation ---------- */
+.site-offgrid .og-hint {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: 34px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px 12px 16px;
+  border-radius: 999px;
+  background: rgba(24, 30, 34, 0.62);
+  color: #f1f3ea;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.site-offgrid .og-hint svg {
+  width: 30px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-dasharray: 60;
+  animation: og-breeze 2.6s ease-in-out infinite;
+}
+@keyframes og-breeze {
+  0% {
+    stroke-dashoffset: 60;
+  }
+  55% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -60;
+  }
+}
+.site-offgrid .og-hint:focus-visible {
+  outline: 2px solid #f4f4de;
+  outline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .site-offgrid .offgrid-cover > img.og-clear {
+    object-position: 55% center;
+    filter: brightness(0.72) saturate(1.12);
+  }
+  .site-offgrid .og-card {
+    padding: 9px 12px 10px;
+    border-radius: 15px;
+  }
+  .site-offgrid .og-card > b {
+    font-size: 12px;
+  }
+  .site-offgrid .og-card > p {
+    font-size: 11px;
+  }
+  .site-offgrid .og-status {
+    top: 16px;
+    left: 7%;
+    right: 7%;
+  }
+  .site-offgrid .og-hint {
+    bottom: 128px;
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-offgrid .og-pile,
+  .site-offgrid .og-wind,
+  .site-offgrid .og-hint,
+  .site-offgrid .og-status {
+    display: none;
+  }
+}

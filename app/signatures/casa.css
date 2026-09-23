@@ -1,0 +1,320 @@
+/* casa signature — scope every rule under .site-casa */
+
+/* Until the drawing is ready the photograph waits on paper; if the script never
+   arrives it simply fades in. */
+.site-casa .casa-cover:not([data-casa-sig]) .casa-visual > img {
+  opacity: 0;
+  animation: casa-sig-fallback 0.8s ease 3.2s forwards;
+}
+.site-casa .casa-cover:not([data-casa-sig]) .casa-visual {
+  background: #efede5;
+}
+@keyframes casa-sig-fallback {
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-casa .casa-cover:not([data-casa-sig]) .casa-visual > img {
+    opacity: 1;
+    animation: none;
+  }
+}
+.site-casa .casa-cover[data-casa-sig="off"] .casa-visual > img {
+  opacity: 1;
+  animation: none;
+}
+.site-casa .casa-cover[data-casa-sig="live"] .casa-visual {
+  background: #efede5;
+}
+.site-casa .casa-cover[data-casa-sig="live"] .casa-visual > img {
+  opacity: 0;
+  animation: none;
+}
+
+.site-casa .casa-sig-canvas,
+.site-casa .casa-sig-annot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+.site-casa .casa-cover:not([data-casa-ready]) .casa-sig-canvas {
+  opacity: 0;
+}
+.site-casa .casa-cover[data-casa-sig="paused"] .casa-sig-canvas,
+.site-casa .casa-cover[data-casa-sig="paused"] .casa-sig-annot,
+.site-casa .casa-cover[data-casa-sig="paused"] .casa-sig-titleblock,
+.site-casa .casa-cover[data-casa-sig="paused"] .casa-sig-clock {
+  display: none;
+}
+
+/* drawing annotations */
+.site-casa .casa-sig-annot {
+  overflow: visible;
+  color: #2b3630;
+}
+.site-casa .casa-sig-annot line,
+.site-casa .casa-sig-annot polyline,
+.site-casa .casa-sig-annot circle,
+.site-casa .casa-sig-annot path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+.site-casa .casa-sig-annot .axis {
+  stroke-dasharray: 14 3 2 3;
+  opacity: 0.28;
+}
+.site-casa .casa-sig-annot .bubble {
+  fill: #efede5;
+  opacity: 0.85;
+}
+.site-casa .casa-sig-annot .level {
+  stroke-dasharray: 5 4;
+  opacity: 0.4;
+}
+.site-casa .casa-sig-annot .dim,
+.site-casa .casa-sig-annot .ext {
+  opacity: 0.7;
+}
+.site-casa .casa-sig-annot .slash {
+  stroke-width: 1.3;
+}
+.site-casa .casa-sig-annot .tri {
+  fill: #2b3630;
+  stroke: none;
+  opacity: 0.8;
+}
+.site-casa .casa-sig-annot text {
+  fill: currentColor;
+  stroke: none;
+  font:
+    500 9.5px/1 "Helvetica Neue",
+    Arial,
+    "Hiragino Sans",
+    sans-serif;
+  letter-spacing: 0.08em;
+}
+.site-casa .casa-sig-annot .bubble-t {
+  font-size: 8.5px;
+  letter-spacing: 0.02em;
+}
+.site-casa .casa-sig-annot .dim-t {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+/* title block — in the corner, as on every sheet */
+.site-casa .casa-sig-titleblock {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  width: 232px;
+  border: 1px solid #2b3630;
+  color: #2b3630;
+  background: #efede5e6;
+  font:
+    9px/1 "Helvetica Neue",
+    Arial,
+    "Hiragino Sans",
+    sans-serif;
+  letter-spacing: 0.1em;
+  pointer-events: none;
+}
+.site-casa .casa-sig-titleblock > span {
+  padding: 7px 9px;
+  border-bottom: 1px solid #2b363066;
+}
+.site-casa .casa-sig-titleblock > span:nth-child(odd) {
+  border-right: 1px solid #2b363066;
+}
+.site-casa .casa-sig-titleblock > span:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+.site-casa .casa-sig-titleblock .tb-name {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+}
+.site-casa .casa-sig-titleblock .tb-title {
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 12px;
+  letter-spacing: 0.3em;
+}
+.site-casa .casa-sig-titleblock .tb-no,
+.site-casa .casa-sig-titleblock .tb-scale,
+.site-casa .casa-sig-titleblock .tb-date {
+  text-align: right;
+}
+
+/* while it is still a drawing, the headline is written in the same ink */
+.site-casa .casa-cover[data-casa-sig="live"] .casa-copy {
+  transition: color 1.2s ease;
+}
+.site-casa
+  .casa-cover[data-casa-sig="live"][data-casa-phase="drawing"]
+  .casa-copy {
+  color: #26312b;
+}
+.site-casa .casa-copy .solid-button {
+  transition:
+    box-shadow 1.2s ease,
+    background-color 1.2s ease;
+}
+.site-casa
+  .casa-cover[data-casa-sig="live"][data-casa-phase="drawing"]
+  .casa-copy
+  .solid-button {
+  box-shadow: inset 0 0 0 1px #26312b;
+  background: #efede5;
+}
+
+/* clock — the time of day the scroll has reached */
+.site-casa .casa-sig-clock {
+  position: absolute;
+  right: 26px;
+  bottom: 24px;
+  width: 168px;
+  color: #f4f1e8;
+  text-shadow: 0 1px 12px #0006;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 1s ease 0.3s,
+    transform 1s ease 0.3s;
+}
+.site-casa .casa-cover[data-casa-phase="built"] .casa-sig-clock {
+  opacity: 1;
+  transform: none;
+}
+.site-casa .casa-sig-clock .ck-time {
+  display: block;
+  font:
+    200 34px/1 "Helvetica Neue",
+    Arial,
+    sans-serif;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.site-casa .casa-sig-clock .ck-label {
+  position: relative;
+  display: block;
+  height: 14px;
+  margin: 9px 0 10px;
+}
+.site-casa .casa-sig-clock .ck-label i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font:
+    normal 11px/14px "Yu Mincho",
+    "Hiragino Mincho ProN",
+    serif;
+  letter-spacing: 0.3em;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.site-casa .casa-sig-clock .ck-label i.on {
+  opacity: 0.92;
+}
+.site-casa .casa-sig-clock .ck-track {
+  position: relative;
+  display: block;
+  height: 1px;
+  background: #f4f1e880;
+}
+.site-casa .casa-sig-clock .ck-track em {
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 7px;
+  background: #f4f1e8a0;
+}
+.site-casa .casa-sig-clock .ck-track em:last-child {
+  margin-left: -1px;
+}
+.site-casa .casa-sig-clock .ck-track b {
+  position: absolute;
+  top: -3px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: #f6d9a6;
+  box-shadow: 0 0 10px #f6c77a;
+}
+
+@media (max-width: 760px) {
+  .site-casa .casa-sig-titleblock {
+    right: 12px;
+    bottom: 12px;
+    width: 190px;
+    font-size: 8px;
+  }
+  .site-casa .casa-sig-titleblock > span {
+    padding: 6px 7px;
+  }
+  .site-casa .casa-sig-titleblock .tb-by {
+    display: none;
+  }
+  .site-casa .casa-sig-titleblock .tb-date {
+    grid-column: 1 / -1;
+  }
+  .site-casa .casa-sig-clock {
+    right: 16px;
+    bottom: 16px;
+    width: 128px;
+  }
+  .site-casa .casa-sig-clock .ck-time {
+    font-size: 26px;
+  }
+}
+
+/* Hold the house in place while the scroll runs the clock. Pure layout:
+   the cover gets a runway and its visual + headline become sticky. */
+.site-casa .casa-cover[data-casa-sig="live"] {
+  height: calc(680px + var(--casa-run, 0px));
+}
+.site-casa .casa-cover[data-casa-sig="live"] .casa-visual {
+  position: sticky;
+  top: var(--casa-pin-top, 0px);
+  left: auto;
+  right: auto;
+  bottom: auto;
+  height: 638px;
+}
+.site-casa .casa-cover[data-casa-sig="live"] .casa-copy {
+  position: sticky;
+  top: calc(var(--casa-pin-top, 0px) + 80px);
+  left: auto;
+  margin: -638px 0 0 calc(4 / 92 * 100%);
+  height: 558px;
+  width: fit-content;
+}
+@media (max-width: 760px) {
+  .site-casa .casa-cover[data-casa-sig="live"] {
+    height: calc(746px + var(--casa-run, 0px));
+  }
+  .site-casa .casa-cover[data-casa-sig="live"] .casa-visual {
+    height: 704px;
+  }
+  .site-casa .casa-cover[data-casa-sig="live"] .casa-copy {
+    top: calc(var(--casa-pin-top, 0px) + 55px);
+    margin: -704px 0 0 calc(5 / 90 * 100%);
+    height: 649px;
+    width: calc(81 / 90 * 100%);
+  }
+}
+@media (max-width: 760px) {
+  /* keep the corner clear of the floating consultation bar */
+  .site-casa .casa-sig-titleblock,
+  .site-casa .casa-sig-clock {
+    bottom: 96px;
+  }
+}

@@ -1,0 +1,119 @@
+/* adapt signature — scope every rule under .site-adapt */
+
+/* while the flood runs, the new theme must be final at once (no colour tweening) */
+html.adapt-vt .site-adapt,
+html.adapt-vt .site-adapt *:not(.ad-ch) {
+  transition: none !important;
+}
+html.adapt-vt::view-transition-old(root),
+html.adapt-vt::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html.adapt-vt::view-transition-new(root) {
+  z-index: 2;
+}
+html.adapt-vt-reduced::view-transition-group(root),
+html.adapt-vt-reduced::view-transition-old(root),
+html.adapt-vt-reduced::view-transition-new(root) {
+  animation-duration: 0.22s;
+}
+
+/* fallback ink (no View Transitions) */
+.ad-ink {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2147483000;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+/* the headline, re-typed character by character */
+.site-adapt .ad-type {
+  display: inline;
+}
+.site-adapt .ad-ch {
+  display: inline-block;
+  white-space: pre;
+  position: relative;
+}
+.site-adapt .ad-ch.is-scramble {
+  opacity: 0.32;
+}
+
+/* 01 信頼感 — a clean typewriter with a caret */
+.site-adapt.style-0 .ad-ch:not(.is-on) {
+  visibility: hidden;
+}
+.site-adapt.style-0 .ad-ch.is-caret {
+  visibility: visible;
+  color: transparent;
+}
+.site-adapt.style-0 .ad-ch.is-caret::after {
+  content: '';
+  position: absolute;
+  left: 0.05em;
+  top: 0.12em;
+  bottom: 0.12em;
+  width: 2px;
+  background: currentColor;
+  color: var(--site-accent);
+}
+
+/* 02 高級感 — each character exhales into place */
+.site-adapt.style-1 .ad-ch {
+  opacity: 0;
+  filter: blur(7px);
+  transform: translateY(0.12em);
+  transition:
+    opacity 0.7s ease,
+    filter 0.7s ease,
+    transform 0.9s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+.site-adapt.style-1 .ad-ch.is-on {
+  opacity: 1;
+  filter: none;
+  transform: none;
+}
+
+/* 03 独創的 — out of order, each glyph landing with a tilt */
+.site-adapt.style-2 .ad-ch.is-on {
+  animation: ad-land 0.26s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+@keyframes ad-land {
+  from {
+    transform: rotate(-14deg) scale(1.35);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* 04 未来的 — decoded, with a brief signal flash */
+.site-adapt.style-3 .ad-ch.is-on {
+  animation: ad-lock 0.12s steps(2) both;
+}
+@keyframes ad-lock {
+  from {
+    color: #e9fbff;
+    text-shadow: 0 0 12px #76f8efaa;
+  }
+  to {
+    text-shadow: none;
+  }
+}
+
+/* 05 遊び心 — dropped in with a bounce */
+.site-adapt.style-4 .ad-ch {
+  opacity: 0;
+  transform: translateY(-0.7em) rotate(-8deg);
+}
+.site-adapt.style-4 .ad-ch.is-on {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.12s,
+    transform 0.5s cubic-bezier(0.34, 1.9, 0.5, 1);
+}

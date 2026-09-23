@@ -27,7 +27,6 @@ import Scene from './scene';
 import BrandDepth from './brand-depth';
 import DemoInquiry from './demo-inquiry';
 import ProjectMotion from './project-motion';
-import BrandMarquee from './brand-marquee';
 import { Slider } from '@/components/ui/slider';
 import {
   Dialog,
@@ -272,7 +271,6 @@ export default function ProjectExperience({
               </a>
             </div>
           </section>
-          <BrandMarquee slug={p.slug} />
           <section id="story" className="site-section split-section">
             <span className="section-kicker">01 / ABOUT US</span>
             <h2>
@@ -397,7 +395,6 @@ export default function ProjectExperience({
               HAIR COLLECTION 01
             </span>
           </section>
-          <BrandMarquee slug={p.slug} />
           <section id="story" className="site-section salon-story">
             <span className="section-kicker">OUR PHILOSOPHY</span>
             <h2>
@@ -499,7 +496,6 @@ export default function ProjectExperience({
             </div>
             <span className="vertical-note">素材を尊び、季節を映す。</span>
           </section>
-          <BrandMarquee slug={p.slug} />
           <section id="story" className="site-section restaurant-story">
             <span className="section-kicker">OUR TABLE</span>
             <h2>
@@ -613,7 +609,6 @@ export default function ProjectExperience({
               01
             </span>
           </section>
-          <BrandMarquee slug={p.slug} />
           <section id="story" className="site-section eclat-story">
             <span className="section-kicker">MADE TO STAY</span>
             <h2>
@@ -735,7 +730,6 @@ export default function ProjectExperience({
               <p>スライダーを動かして、構造を確かめてください。</p>
             </div>
           </section>
-          <BrandMarquee slug={p.slug} />
           <section id="story" className="site-section aether-story">
             <span className="section-kicker">LESS NOISE. MORE MUSIC.</span>
             <h2>
@@ -843,7 +837,6 @@ export default function ProjectExperience({
               <span>CONCRETE · GLASS · LIGHT</span>
             </div>
           </section>
-          <BrandMarquee slug={p.slug} />
           <section id="story" className="site-section casa-story">
             <div>
               <span className="section-kicker">THE CONCEPT</span>
@@ -955,7 +948,6 @@ export default function ProjectExperience({
               </p>
             </div>
           </section>
-          <BrandMarquee slug={p.slug} />
           <section id="story" className="site-section studio-story">
             <Img
               name="studio"
@@ -1011,7 +1003,6 @@ export default function ProjectExperience({
               <span>02 — A PORTRAIT</span>
             </div>
           </section>
-          <BrandMarquee slug={p.slug} />
           <section id="details" className="site-section photo-works">
             <div className="section-title">
               <h2>作品</h2>
@@ -1117,7 +1108,6 @@ export default function ProjectExperience({
               ))}
             </div>
           </section>
-          <BrandMarquee slug={p.slug} />
           <section id="story" className="site-section adapt-story">
             <span className="section-kicker">DESIGNED AROUND YOU</span>
             <h2>
@@ -1180,7 +1170,6 @@ export default function ProjectExperience({
               </span>
             </div>
           </section>
-          <BrandMarquee slug={p.slug} />
           <section id="story" className="site-section offgrid-story">
             <span className="section-kicker">LEAVE THE EVERYDAY BEHIND</span>
             <h2>

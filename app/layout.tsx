@@ -1,7 +1,16 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import './studio.css';
-import './motion.css';
+import './signatures/nova.css';
+import './signatures/lumina.css';
+import './signatures/noir.css';
+import './signatures/eclat.css';
+import './signatures/aether.css';
+import './signatures/casa.css';
+import './signatures/room.css';
+import './signatures/yui.css';
+import './signatures/adapt.css';
+import './signatures/offgrid.css';
 export const metadata: Metadata = {
   title: 'Web Experience Lab — 触れて伝わるWebサイト制作',
   description:
