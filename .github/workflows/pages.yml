@@ -1,0 +1,61 @@
+# Publishes the site to GitHub Pages and refreshes the migration folder (web.zip)
+# on every push to main.
+name: Publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Site for GitHub Pages, served at /<repository name>/
+      - run: npm run export
+        env:
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+      - run: mv "out/${{ github.event.repository.name }}" pages
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+
+      # Folder to place at /web/ on another site
+      - run: npm run export
+        env:
+          NEXT_PUBLIC_BASE_PATH: /web
+      - run: cd out && zip -qr ../web.zip web
+      - name: Update the download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete migration --cleanup-tag --yes || true
+          gh release create migration web.zip --target "$GITHUB_SHA" \
+            --title "移行用フォルダ（/web/ 用）" \
+            --notes "web.zip を展開した web フォルダを、公開フォルダの直下に置くと https://<ドメイン>/web/ で表示されます。隠しファイル .htaccess も一緒にアップロードしてください。"
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

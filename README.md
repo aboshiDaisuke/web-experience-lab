@@ -54,7 +54,14 @@ Blender 5.x をコマンドラインで実行（GUI・アドオン不要）。�
 
 `npm run dev -- --host 127.0.0.1` → http://localhost:3000/
 
-ユーザー指定によりローカルのみで確認・変更します。この改訂は外部公開していません。以前のSites公開版は更新していません。
+## 公開と移行用フォルダ
+
+`main` に push すると GitHub Actions（`.github/workflows/pages.yml`）が次の2つを行います。
+
+- GitHub Pages に公開: https://aboshidaisuke.github.io/web-experience-lab/
+- 別サイトの `/web/` に置く移行用フォルダを作り直し、Releases に置く: https://github.com/aboshiDaisuke/web-experience-lab/releases/download/migration/web.zip
+
+手元で書き出す場合は `NEXT_PUBLIC_BASE_PATH=/web npm run export`（`out/web/` ができる。置き場所のパスに合わせて値を変える）。Cloudflare Workers で下層に置く場合は同じ変数を付けて `npm run build`。画像などのパスは `lib/base-path.ts` の `BASE` から組み立てること。以前のSites公開版は更新していません。
 
 ## ページと実装
 
