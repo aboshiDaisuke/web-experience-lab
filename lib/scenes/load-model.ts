@@ -2,6 +2,7 @@ import * as T from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import { BASE } from '@/lib/base-path';
 export async function loadModel(
   path: string,
   renderer: T.WebGLRenderer,
@@ -15,13 +16,13 @@ export async function loadModel(
     return null;
   const buffer = await response.arrayBuffer();
   if (signal.aborted) return null;
-  const draco = new DRACOLoader().setDecoderPath('/draco/');
+  const draco = new DRACOLoader().setDecoderPath(`${BASE}/draco/`);
   const ktx = new KTX2Loader()
-    .setTranscoderPath('/basis/')
+    .setTranscoderPath(`${BASE}/basis/`)
     .detectSupport(renderer);
   try {
     const loader = new GLTFLoader().setDRACOLoader(draco).setKTX2Loader(ktx);
-    const gltf = await loader.parseAsync(buffer, '/models/');
+    const gltf = await loader.parseAsync(buffer, `${BASE}/models/`);
     const group = new T.Group();
     group.add(gltf.scene);
     const bounds = new T.Box3().setFromObject(group);

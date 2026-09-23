@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Signature } from './types';
+import { BASE } from '@/lib/base-path';
 
 /*
  * NOIR TABLE — candlelight.
@@ -482,7 +483,7 @@ const mount: Signature = (ctx) => {
   // ---------- go ----------
   const image = new Image();
   image.decoding = 'async';
-  image.src = img.currentSrc || img.src || '/images/dining.jpg';
+  image.src = img.currentSrc || img.src || `${BASE}/images/dining.jpg`;
   image
     .decode()
     .then(() => {

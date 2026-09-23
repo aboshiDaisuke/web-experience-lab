@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { projects } from '@/lib/portfolio';
 import { goals, workMeta, type GoalId } from '@/lib/studio';
+import { BASE } from '@/lib/base-path';
 
 export default function Works() {
   const [goal, setGoal] = useState<GoalId>('all');
@@ -39,12 +40,12 @@ export default function Works() {
           <li key={p.slug}>
             <a
               className="st-work"
-              href={`/works/${p.slug}`}
+              href={`${BASE}/works/${p.slug}`}
               style={{ '--tone': p.color } as React.CSSProperties}
             >
               <span className="st-work-visual">
                 <img
-                  src={`/images/works/${p.slug}-desktop.jpg`}
+                  src={`${BASE}/images/works/${p.slug}-desktop.jpg`}
                   alt=""
                   loading="lazy"
                 />

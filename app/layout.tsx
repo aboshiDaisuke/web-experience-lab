@@ -13,6 +13,7 @@ import './signatures/yui.css';
 import './signatures/adapt.css';
 import './signatures/offgrid.css';
 import './tour.css';
+import { BASE } from '@/lib/base-path';
 export const metadata: Metadata = {
   title: 'Web Experience Lab — 触れて伝わるWebサイト制作',
   description:
@@ -30,7 +31,7 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@500;700&display=swap"
         />
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href={`${BASE}/favicon.svg`} type="image/svg+xml" />
       </head>
       <body>{children}</body>
     </html>

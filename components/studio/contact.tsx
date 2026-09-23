@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { projects } from '@/lib/portfolio';
 import { contactEndpoint, plans, setups, stacks } from '@/lib/studio';
 import { answerRows, evaluate, verdict, type Answers } from '@/lib/feasibility';
+import { BASE } from '@/lib/base-path';
 
 const kinds = [...plans.map((p) => p.name), 'まだ決めていない'];
 const envs = [...setups.map((u) => u.name), 'よく分からない'];
@@ -110,7 +111,7 @@ export default function Contact({
         </p>
         {refSlug && (
           <figure className="st-contact-ref">
-            <img src={`/images/works/${refSlug}-desktop.jpg`} alt="" />
+            <img src={`${BASE}/images/works/${refSlug}-desktop.jpg`} alt="" />
             <figcaption>
               <span>このテイストで相談</span>
               <b>{refName}</b>

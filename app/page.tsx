@@ -11,6 +11,7 @@ import ToTop from '@/components/studio/to-top';
 import Stacks from '@/components/studio/stacks';
 import FeasibilityCheck from '@/components/studio/check';
 import type { Answers } from '@/lib/feasibility';
+import { BASE, HOME } from '@/lib/base-path';
 
 const nav = [
   ['作品', '#works'],
@@ -40,7 +41,7 @@ export default function Home() {
         作品一覧へ移動
       </a>
       <header className={`st-header ${solid ? 'is-solid' : ''}`}>
-        <a href="/" className="st-logo" aria-label="Web Experience Lab トップへ">
+        <a href={HOME} className="st-logo" aria-label="Web Experience Lab トップへ">
           <b>W/E</b>
           <span>Web Experience Lab</span>
         </a>
@@ -81,8 +82,8 @@ export default function Home() {
                   ))}
                 </h3>
                 <p>{s.body}</p>
-                <a href={`/works/${ex.slug}`} className="st-service-example">
-                  <img src={`/images/works/${ex.slug}-mobile.jpg`} alt="" loading="lazy" />
+                <a href={`${BASE}/works/${ex.slug}`} className="st-service-example">
+                  <img src={`${BASE}/images/works/${ex.slug}-mobile.jpg`} alt="" loading="lazy" />
                   <span>
                     作品例
                     <b>{ex.name}</b>
@@ -121,8 +122,8 @@ export default function Home() {
                     <li key={it}>{it}</li>
                   ))}
                 </ul>
-                <a href={`/works/${ex.slug}`} className="st-plan-example">
-                  <img src={`/images/works/${ex.slug}-desktop.jpg`} alt="" loading="lazy" />
+                <a href={`${BASE}/works/${ex.slug}`} className="st-plan-example">
+                  <img src={`${BASE}/images/works/${ex.slug}-desktop.jpg`} alt="" loading="lazy" />
                   <span>
                     近い作品 <b>{ex.name}</b>
                   </span>
@@ -178,7 +179,7 @@ export default function Home() {
       />
 
       <footer className="st-footer">
-        <a href="/" className="st-logo">
+        <a href={HOME} className="st-logo">
           <b>W/E</b>
           <span>Web Experience Lab</span>
         </a>

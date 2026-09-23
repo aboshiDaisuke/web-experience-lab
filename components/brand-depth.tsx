@@ -21,8 +21,9 @@ import {
 import { Slider } from '@/components/ui/slider';
 import Scene from './scene';
 import { openTour } from '@/lib/tour/bus';
+import { BASE } from '@/lib/base-path';
 const Photo = ({ name, alt }: { name: string; alt: string }) => (
-  <img src={`/images/${name}.jpg`} alt={alt} loading="lazy" />
+  <img src={`${BASE}/images/${name}.jpg`} alt={alt} loading="lazy" />
 );
 function Questions({ items }: { items: string[][] }) {
   return (
@@ -739,7 +740,7 @@ export default function BrandDepth({
               ['yui', 'VISUAL DIARY', '日々を、記憶に残す。', 'hotel'],
               ['adapt', 'MIRAI / YOU', '好みを、かたちにする。', 'fashion'],
             ].map(([slug, t, d, img]) => (
-              <a href={`/works/${slug}`} key={slug}>
+              <a href={`${BASE}/works/${slug}`} key={slug}>
                 <Photo name={img} alt={d} />
                 <span>
                   {t}

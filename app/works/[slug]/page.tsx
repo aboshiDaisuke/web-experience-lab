@@ -1,6 +1,10 @@
 import { notFound } from 'next/navigation';
 import { projects } from '@/lib/portfolio';
 import ProjectExperience from '@/components/project-experience';
+export const dynamicParams = false;
+export function generateStaticParams() {
+  return projects.map((p) => ({ slug: p.slug }));
+}
 export async function generateMetadata({
   params,
 }: {

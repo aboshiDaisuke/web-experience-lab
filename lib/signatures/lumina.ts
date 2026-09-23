@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Signature } from './types';
+import { BASE } from '@/lib/base-path';
 
 /*
  * LUMINA HAIR — silk hair.
@@ -587,7 +588,7 @@ const mount: Signature = (ctx) => {
 
   const image = new Image();
   image.decoding = 'async';
-  image.src = img.currentSrc || img.src || '/images/fashion.jpg';
+  image.src = img.currentSrc || img.src || `${BASE}/images/fashion.jpg`;
   image
     .decode()
     .then(() => {

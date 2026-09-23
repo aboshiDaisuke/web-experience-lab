@@ -1,6 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { projects } from '@/lib/portfolio';
+import { BASE } from '@/lib/base-path';
 type Tool = {
   name: string;
   description: string;
@@ -48,7 +49,7 @@ export default function WebMCP() {
                 throw new Error('A valid project slug is required.');
               const index = projects.findIndex((p) => p.slug === input.slug);
               if (index === -1) throw new Error('Project not found.');
-              const url = `/works/${projects[index].slug}`;
+              const url = `${BASE}/works/${projects[index].slug}`;
               location.assign(url);
               return { opened: projects[index].slug, url, navigationStarted: true };
             },

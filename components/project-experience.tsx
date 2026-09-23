@@ -34,6 +34,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { BASE, HOME } from '@/lib/base-path';
 const Img = ({
   name,
   alt = '',
@@ -42,7 +43,7 @@ const Img = ({
   name: string;
   alt?: string;
   className?: string;
-}) => <img className={className} src={`/images/${name}.jpg`} alt={alt} />;
+}) => <img className={className} src={`${BASE}/images/${name}.jpg`} alt={alt} />;
 const tabs = ['信頼感', '高級感', '独創的', '未来的', '遊び心'];
 const themes = ['CORPORATE', 'LUXURY', 'CREATIVE', 'FUTURE', 'PLAYFUL'];
 export default function ProjectExperience({
@@ -133,12 +134,12 @@ export default function ProjectExperience({
       <ProjectMotion slug={p.slug} onExplode={setExplode} />
       {!embedded && (
         <div className="project-return">
-          <a href="/">
+          <a href={HOME}>
             <ArrowLeft size={15} />
             作品一覧へ戻る
           </a>
           <span>{p.category} / CONCEPT WEBSITE</span>
-          <a href={`/works/${next.slug}`}>
+          <a href={`${BASE}/works/${next.slug}`}>
             次の作品 <ArrowRight size={15} />
           </a>
         </div>
@@ -1287,8 +1288,8 @@ export default function ProjectExperience({
         </button>
       </section>
       {!embedded && (
-        <a className="work-consult" href={`/?ref=${p.slug}#contact`}>
-          <img src={`/images/works/${p.slug}-desktop.jpg`} alt="" />
+        <a className="work-consult" href={`${HOME}?ref=${p.slug}#contact`}>
+          <img src={`${BASE}/images/works/${p.slug}-desktop.jpg`} alt="" />
           <span>
             <small>Web Experience Lab の制作サンプルです</small>
             このテイストで制作を相談する
@@ -1299,7 +1300,7 @@ export default function ProjectExperience({
       <footer className="site-footer">
         <a href="#top">{p.name}</a>
         <span>架空ブランドの制作サンプル / © 2026</span>
-        <a href="/" target={embedded ? '_top' : undefined}>
+        <a href={HOME} target={embedded ? '_top' : undefined}>
           作品一覧へ <ArrowUpRight size={15} />
         </a>
       </footer>

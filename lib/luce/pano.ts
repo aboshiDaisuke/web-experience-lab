@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { BASE } from '@/lib/base-path';
 
 export type PanoState = { floor: number; night: boolean };
 export type PanoController = {
@@ -12,7 +13,7 @@ const FLOORS = [
   { floor: 20, file: '58m' },
 ];
 const src = (i: number, night: boolean) =>
-  `/models/tour/luce/view-${FLOORS[i].file}-${night ? 'night' : 'day'}.jpg`;
+  `${BASE}/models/tour/luce/view-${FLOORS[i].file}-${night ? 'night' : 'day'}.jpg`;
 
 /**
  * Drag-to-look 360° view from the model unit's balcony. Switching floors plays a short

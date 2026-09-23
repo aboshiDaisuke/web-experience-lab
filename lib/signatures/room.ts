@@ -1,5 +1,6 @@
 import { PerspectiveCamera, Vector3 } from 'three';
 import type { Signature } from './types';
+import { BASE } from '@/lib/base-path';
 
 /**
  * THE CREATIVE ROOM — "the work performs itself".
@@ -183,7 +184,7 @@ const buildPC: Build = (body) => {
 /* ------------------------------------------------------------------ */
 /* CAMERA — focus, shutter, develop, contact sheet                      */
 /* ------------------------------------------------------------------ */
-const PHOTO = '/images/fashion.jpg';
+const PHOTO = `${BASE}/images/fashion.jpg`;
 const FRAMES: [string, string][] = [
   ['52% 18%', '170%'],
   ['50% 26%', '135%'],

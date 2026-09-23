@@ -1,3 +1,4 @@
+import { BASE } from '@/lib/base-path';
 /**
  * Property definitions for the 3D tour viewer.
  *
@@ -131,7 +132,7 @@ const casa: TourProperty = {
   id: 'casa',
   title: 'CASA MIRAI',
   subtitle: '2階建て・4LDK＋スタディ',
-  base: '/models/tour/casa',
+  base: `${BASE}/models/tour/casa`,
   model: 'casa.glb',
   skyDay: 'sky-day.jpg',
   skyNight: 'sky-night.jpg',
@@ -239,7 +240,7 @@ const luce: TourProperty = {
   id: 'luce',
   title: 'MIRAI HILLS 目黒',
   subtitle: '3LDK・12階',
-  base: '/models/tour/luce',
+  base: `${BASE}/models/tour/luce`,
   model: 'luce.glb',
   skyDay: 'sky-day.jpg',
   skyNight: 'sky-night.jpg',

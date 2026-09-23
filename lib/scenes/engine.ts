@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { sculpture, product, house, room } from './models';
 import { loadModel } from './load-model';
 import type { SceneKind } from '@/components/scene';
+import { BASE } from '@/lib/base-path';
 type State = {
   view: string;
   night: boolean;
@@ -84,7 +85,7 @@ export async function mountScene(
       }
     });
   if (asset)
-    loadModel(`/models/${asset}.glb`, renderer, abort.signal)
+    loadModel(`${BASE}/models/${asset}.glb`, renderer, abort.signal)
       .then((replacement) => {
         if (!replacement) return;
         if (dead) {

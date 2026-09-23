@@ -35,6 +35,7 @@ import {
   makeGround,
   makeSky,
 } from './materials';
+import { BASE } from '@/lib/base-path';
 
 export type TourMode = 'dollhouse' | 'plan' | 'walk';
 
@@ -452,7 +453,7 @@ export function mountTour(
     if (disposed) return;
 
     // glTF
-    const draco = new DRACOLoader().setDecoderPath('/draco/');
+    const draco = new DRACOLoader().setDecoderPath(`${BASE}/draco/`);
     const loader = new GLTFLoader().setDRACOLoader(draco);
     // tolerate textures without an image source (exporter artefact)
     loader.register((parser) => ({

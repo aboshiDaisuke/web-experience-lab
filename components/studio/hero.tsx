@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { projects } from '@/lib/portfolio';
+import { BASE } from '@/lib/base-path';
 
-const images = projects.map((p) => `/images/works/${p.slug}-desktop.jpg`);
+const images = projects.map((p) => `${BASE}/images/works/${p.slug}-desktop.jpg`);
 
 export default function Hero() {
   const host = useRef<HTMLDivElement>(null);
@@ -21,7 +22,7 @@ export default function Hero() {
           onTop: setTop,
           onHover: setHovered,
           onGrab: setGrabbing,
-          onOpen: (index) => location.assign(`/works/${projects[index].slug}`),
+          onOpen: (index) => location.assign(`${BASE}/works/${projects[index].slug}`),
         }),
       )
       .then((stack) => {
@@ -48,7 +49,7 @@ export default function Hero() {
         {failed && (
           <div className="st-hero-fallback">
             {projects.slice(0, 6).map((x) => (
-              <img key={x.slug} src={`/images/works/${x.slug}-desktop.jpg`} alt="" />
+              <img key={x.slug} src={`${BASE}/images/works/${x.slug}-desktop.jpg`} alt="" />
             ))}
           </div>
         )}
@@ -75,7 +76,7 @@ export default function Hero() {
         <span className="st-hero-focus-count">
           {String(shown + 1).padStart(2, '0')} / {projects.length}
         </span>
-        <a href={`/works/${p.slug}`}>
+        <a href={`${BASE}/works/${p.slug}`}>
           <span className="st-hero-focus-cat">{p.category}</span>
           <b>
             {p.name}

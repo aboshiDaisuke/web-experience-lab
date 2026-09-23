@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Box, Sun, Moon, Move } from 'lucide-react';
 import type { PanoController } from '@/lib/luce/pano';
+import { BASE } from '@/lib/base-path';
 
 const floors = [
   { floor: 20, label: '20階', note: '遠くの超高層まで見渡す' },
@@ -132,7 +133,7 @@ export default function LuceSite({
           </p>
         </div>
         <figure>
-          <img src="/images/luce/ldk.jpg" alt="南と東の大開口に面したモデルルームのリビング" />
+          <img src={`${BASE}/images/luce/ldk.jpg`} alt="南と東の大開口に面したモデルルームのリビング" />
           <figcaption>Cタイプ モデルルーム LD・K（CG）</figcaption>
         </figure>
       </section>
@@ -168,14 +169,14 @@ export default function LuceSite({
             <text x="12.9" y="0.2" className="plan-north">N ↑</text>
           </svg>
           <figure className="luce-plan-photo">
-            <img src="/images/luce/master.jpg" alt="洋室1（主寝室）" />
+            <img src={`${BASE}/images/luce/master.jpg`} alt="洋室1（主寝室）" />
             <figcaption>洋室1 8.4帖（CG）</figcaption>
           </figure>
         </div>
       </section>
 
       <section className="luce-tourband">
-        <img src="/images/luce/night.jpg" alt="夜景を望むリビング" />
+        <img src={`${BASE}/images/luce/night.jpg`} alt="夜景を望むリビング" />
         <div>
           <h2>
             いつでも、

@@ -15,6 +15,8 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === 'seatbelt';
 const localBindingConfig = {
   main: 'vinext/server/fetch-handler',
   compatibility_flags: ['nodejs_compat'],
+  // Lets the worker serve public/ files itself, needed when basePath is set.
+  assets: { binding: 'ASSETS' },
   d1_databases: d1
     ? [
         {
