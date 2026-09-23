@@ -1383,7 +1383,7 @@ button:focus-visible {
   --site-accent: #59432f;
 }
 .site-eclat .site-wordmark {
-  font-size: 37px;
+  font-size: 30px;
   letter-spacing: 0.12em;
 }
 .site-eclat .site-nav {
@@ -3223,7 +3223,7 @@ button:focus-visible {
     font-size: 12px;
   }
   .site-eclat .site-wordmark {
-    font-size: 30px;
+    font-size: 24px;
   }
   .eclat-cover {
     height: 740px;

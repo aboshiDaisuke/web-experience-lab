@@ -1,6 +1,5 @@
 'use client';
 import { useEffect } from 'react';
-import { flushSync } from 'react-dom';
 import { projects } from '@/lib/portfolio';
 type Tool = {
   name: string;
@@ -9,13 +8,7 @@ type Tool = {
   annotations: { readOnlyHint: boolean; untrustedContentHint: boolean };
   execute: (input: unknown) => unknown;
 };
-export default function WebMCP({
-  selectProject,
-  setMobile,
-}: {
-  selectProject: (index: number) => void;
-  setMobile: (mobile: boolean) => void;
-}) {
+export default function WebMCP() {
   useEffect(() => {
     const context = (
       document as Document & {
@@ -33,14 +26,13 @@ export default function WebMCP({
       Promise.resolve(
         context.registerTool(
           {
-            name: 'preview_portfolio_project',
+            name: 'open_portfolio_project',
             description:
-              'Select a portfolio project and optionally its desktop or phone viewport in the live preview. This starts loading the selected page.',
+              'Open the page of a portfolio project. This navigates away from the current page.',
             inputSchema: {
               type: 'object',
               properties: {
                 slug: { type: 'string', enum: projects.map((p) => p.slug) },
-                device: { type: 'string', enum: ['desktop', 'phone'] },
               },
               required: ['slug'],
               additionalProperties: false,
@@ -56,21 +48,9 @@ export default function WebMCP({
                 throw new Error('A valid project slug is required.');
               const index = projects.findIndex((p) => p.slug === input.slug);
               if (index === -1) throw new Error('Project not found.');
-              if (
-                'device' in input &&
-                input.device !== 'desktop' &&
-                input.device !== 'phone'
-              )
-                throw new Error('Device must be desktop or phone.');
-              flushSync(() => {
-                selectProject(index);
-                if ('device' in input) setMobile(input.device === 'phone');
-              });
-              return {
-                selected: projects[index].slug,
-                url: `/works/${projects[index].slug}`,
-                navigationStarted: true,
-              };
+              const url = `/works/${projects[index].slug}`;
+              location.assign(url);
+              return { opened: projects[index].slug, url, navigationStarted: true };
             },
           },
           { signal: lifecycle.signal },
@@ -78,6 +58,6 @@ export default function WebMCP({
       ).catch(() => {});
     } catch {}
     return () => lifecycle.abort();
-  }, [selectProject, setMobile]);
+  }, []);
   return null;
 }

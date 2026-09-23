@@ -4,11 +4,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { projects } from '@/lib/portfolio';
 import { goals, workMeta, type GoalId } from '@/lib/studio';
 
-export default function Works({
-  onConsult,
-}: {
-  onConsult: (slug: string) => void;
-}) {
+export default function Works() {
   const [goal, setGoal] = useState<GoalId>('all');
   const list = projects.filter(
     (p) => goal === 'all' || workMeta[p.slug].goals.includes(goal),
@@ -18,7 +14,7 @@ export default function Works({
       <div className="st-section-head">
         <h2 id="works-title">作品</h2>
         <p>
-          業種も目的も違う10のサイト。どれも画面の中で予約や3D操作まで試せます。つくりたいものに近い作品から見てください。
+          業種も目的も違う11のサイト。どれも予約や3D操作まで、実際に動かして試せます。
         </p>
       </div>
       <div className="st-filter" role="group" aria-label="目的で絞り込む">
@@ -38,60 +34,33 @@ export default function Works({
           </button>
         ))}
       </div>
-      <div className="st-work-grid">
-        {list.map((p) => {
-          const meta = workMeta[p.slug];
-          return (
-            <article
-              key={p.slug}
+      <ul className="st-work-grid">
+        {list.map((p) => (
+          <li key={p.slug}>
+            <a
               className="st-work"
+              href={`/works/${p.slug}`}
               style={{ '--tone': p.color } as React.CSSProperties}
             >
-              <a
-                className="st-work-visual"
-                href={`/works/${p.slug}`}
-                aria-label={`${p.name}のサイトを開く`}
-              >
+              <span className="st-work-visual">
                 <img
-                  className="st-work-desktop"
                   src={`/images/works/${p.slug}-desktop.jpg`}
                   alt=""
                   loading="lazy"
                 />
-                <img
-                  className="st-work-phone"
-                  src={`/images/works/${p.slug}-mobile.jpg`}
-                  alt=""
-                  loading="lazy"
-                />
-              </a>
-              <div className="st-work-body">
-                <div className="st-work-title">
-                  <h3>{p.name}</h3>
-                  <span>{p.category}</span>
-                </div>
-                <p>{p.description}</p>
-                <ul aria-label="このサイトでつくったもの">
-                  {meta.built.map((b) => (
-                    <li key={b}>{b}</li>
-                  ))}
-                </ul>
-                <div className="st-work-foot">
-                  <span>同じ規模なら {meta.scale}</span>
-                  <div>
-                    <a href={`/works/${p.slug}`}>
-                      サイトを見る <ArrowUpRight size={15} />
-                    </a>
-                    <button onClick={() => onConsult(p.slug)}>
-                      このテイストで相談
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+              </span>
+              <span className="st-work-title">
+                <b>{p.name}</b>
+                <ArrowUpRight size={18} aria-hidden />
+              </span>
+              <span className="st-work-meta">
+                {p.category}
+                <span>{workMeta[p.slug].built[0]}</span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

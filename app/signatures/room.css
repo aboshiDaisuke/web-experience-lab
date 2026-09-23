@@ -1092,6 +1092,8 @@
   font:
     900 28px Arial,
     sans-serif;
+  line-height: 1.05;
+  text-align: center;
   letter-spacing: 0.14em;
   margin-right: -0.14em;
 }
@@ -1136,6 +1138,8 @@
   font:
     900 18px Arial,
     sans-serif;
+  line-height: 1.15;
+  text-align: center;
   letter-spacing: 0.2em;
   color: #33473b;
 }

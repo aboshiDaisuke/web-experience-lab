@@ -5,12 +5,12 @@ import { projects } from '@/lib/portfolio';
 import { services, plans, steps, faqs } from '@/lib/studio';
 import Hero from '@/components/studio/hero';
 import Works from '@/components/studio/works';
-import LivePreview from '@/components/studio/live-preview';
+import WebMCP from '@/components/webmcp';
 import Contact from '@/components/studio/contact';
+import ToTop from '@/components/studio/to-top';
 
 const nav = [
   ['作品', '#works'],
-  ['触って試す', '#try'],
   ['できること', '#services'],
   ['料金', '#plans'],
   ['制作の流れ', '#process'],
@@ -18,29 +18,16 @@ const nav = [
 const byslug = (slug: string) => projects.find((p) => p.slug === slug)!;
 
 export default function Home() {
-  const [preview, setPreview] = useState(0);
   const [refSlug, setRefSlug] = useState('');
   const [solid, setSolid] = useState(false);
   useEffect(() => {
     const ref = new URLSearchParams(location.search).get('ref');
     if (ref && projects.some((p) => p.slug === ref)) setRefSlug(ref);
-    const saved = Number(sessionStorage.getItem('lab-selection'));
-    if (saved > 0 && saved < projects.length) setPreview(saved);
     const onScroll = () => setSolid(scrollY > innerHeight * 0.8);
     onScroll();
     addEventListener('scroll', onScroll, { passive: true });
     return () => removeEventListener('scroll', onScroll);
   }, []);
-  const selectPreview = (i: number) => {
-    setPreview(i);
-    try {
-      sessionStorage.setItem('lab-selection', String(i));
-    } catch {}
-  };
-  const consult = (slug: string) => {
-    setRefSlug(slug);
-    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
-  };
   return (
     <main className="studio">
       <a className="st-skip" href="#works">
@@ -63,9 +50,9 @@ export default function Home() {
         </a>
       </header>
 
+      <WebMCP />
       <Hero />
-      <Works onConsult={consult} />
-      <LivePreview selected={preview} onSelect={selectPreview} />
+      <Works />
 
       <section id="services" className="st-services" aria-labelledby="services-title">
         <div className="st-section-head">
@@ -190,6 +177,7 @@ export default function Home() {
         </nav>
         <p>掲載作品のブランド・人物・価格はすべて架空の制作サンプルです。© 2026 Web Experience Lab</p>
       </footer>
+      <ToTop />
     </main>
   );
 }

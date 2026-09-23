@@ -1,6 +1,6 @@
 export const works = [
   {
-    name: 'NOVA INDUSTRIES',
+    name: 'MIRAI NOVA',
     category: '企業サイト',
     image: 'architecture',
     tag: 'Precision meets progress.',
@@ -9,7 +9,7 @@ export const works = [
     color: '#142338',
   },
   {
-    name: 'LUMINA HAIR',
+    name: 'LUMINA MIRAI',
     category: '美容室・サロン',
     image: 'fashion',
     tag: 'Your beauty, in motion.',
@@ -18,7 +18,7 @@ export const works = [
     color: '#baaa94',
   },
   {
-    name: 'NOIR TABLE',
+    name: 'TABLE 未来',
     category: '飲食店',
     image: 'dining',
     tag: 'Taste the Story.',
@@ -27,7 +27,7 @@ export const works = [
     color: '#292219',
   },
   {
-    name: 'MAISON ÉCLAT',
+    name: 'MAISON MIRAI',
     category: '高級ブランド',
     image: 'fashion',
     tag: 'The art of less.',
@@ -36,7 +36,7 @@ export const works = [
     color: '#403930',
   },
   {
-    name: 'AETHER ONE',
+    name: 'MIRAI ONE',
     category: '3D製品紹介',
     image: 'architecture',
     tag: 'Explore Every Detail.',
@@ -45,7 +45,7 @@ export const works = [
     color: '#252c2d',
   },
   {
-    name: 'CASA N01',
+    name: 'CASA MIRAI',
     category: '住宅・建築',
     image: 'architecture',
     tag: 'Walk Through Your Vision.',
@@ -54,7 +54,7 @@ export const works = [
     color: '#757569',
   },
   {
-    name: 'THE CREATIVE ROOM',
+    name: 'THE MIRAI ROOM',
     category: 'バーチャル空間',
     image: 'architecture',
     tag: 'Explore the Web.',
@@ -63,7 +63,7 @@ export const works = [
     color: '#3a473a',
   },
   {
-    name: 'YUI / VISUAL DIARY',
+    name: 'MIRAI / VISUAL DIARY',
     category: 'クリエイター',
     image: 'fashion',
     tag: 'A different point of view.',
@@ -72,7 +72,7 @@ export const works = [
     color: '#634642',
   },
   {
-    name: 'ADAPT / YOU',
+    name: 'MIRAI / YOU',
     category: '好みに合わせるWEB',
     image: 'architecture',
     tag: 'A website that changes with you.',
@@ -81,7 +81,7 @@ export const works = [
     color: '#839350',
   },
   {
-    name: 'OFF THE GRID',
+    name: 'OFF GRID みらい',
     category: 'キャンペーンLP',
     image: 'dining',
     tag: 'Break your everyday.',

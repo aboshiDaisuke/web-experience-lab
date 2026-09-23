@@ -3,63 +3,58 @@ export const goals = [
   { id: 'brand', label: '会社・ブランドを伝えたい' },
   { id: 'booking', label: '予約・申込みを増やしたい' },
   { id: '3d', label: '3Dで製品・空間を見せたい' },
+  { id: 'estate', label: '物件を内覧で見せたい' },
   { id: 'photo', label: '写真で魅せたい' },
 ] as const;
 export type GoalId = (typeof goals)[number]['id'];
 
 export const workMeta: Record<
   string,
-  { goals: GoalId[]; built: string[]; scale: string }
+  { goals: GoalId[]; built: string[] }
 > = {
   nova: {
     goals: ['brand'],
     built: ['検査レンズで拡大（WebGL）', '2点間の寸法計測', '事業別の切り替え'],
-    scale: '8ページ前後・約6週間',
   },
   lumina: {
     goals: ['brand', 'booking'],
     built: ['なでると髪が流れる（流体シェーダー）', 'スタイルギャラリー', '予約フォーム'],
-    scale: '5ページ前後・約5週間',
   },
   noir: {
     goals: ['booking', 'photo'],
     built: ['カーソルがろうそくの灯りに（WebGL）', '立ちのぼる湯気', 'コース別の予約'],
-    scale: '5ページ前後・約5週間',
   },
   eclat: {
     goals: ['brand', 'photo'],
     built: ['スクロールで縫われる革の縫い目', '立体的に傾くバッグ', 'カラー選択'],
-    scale: '6ページ前後・約6週間',
+  },
+  luce: {
+    goals: ['estate', '3d', 'booking'],
+    built: ['階数別の360°眺望', '歩いて見られる3Dモデルルーム', '間取りから内覧'],
   },
   aether: {
     goals: ['3d'],
     built: ['その場で鳴る生成サウンド', '音に反応する波紋', 'スクロールで分解する3D'],
-    scale: '1〜3ページ・約8週間',
   },
   casa: {
-    goals: ['3d', 'photo'],
-    built: ['図面から建ち上がる外観', 'スクロールで夕暮れから夜へ', '3D内覧'],
-    scale: '3〜5ページ・約9週間',
+    goals: ['estate', '3d', 'photo'],
+    built: ['図面から建ち上がる外観', 'Blender製の住宅を歩いて内覧', 'スクロールで夕暮れから夜へ'],
   },
   room: {
     goals: ['3d'],
     built: ['道具を選ぶと仕事を実演', 'コードからサイトが組み上がる', '3Dの部屋'],
-    scale: '1〜3ページ・約8週間',
   },
   yui: {
     goals: ['photo', 'brand'],
     built: ['ネガから現像される写真', 'ファインダーで撮影', 'フィルムに残る撮影カット'],
-    scale: '4ページ前後・約4週間',
   },
   adapt: {
     goals: ['3d', 'brand'],
     built: ['クリック地点から塗り替わる', 'スタイルごとの見出しの表情', 'WebGLオブジェクト'],
-    scale: '1〜2ページ・約6週間',
   },
   offgrid: {
     goals: ['booking', 'photo'],
     built: ['通知の山を風が吹き飛ばす', 'タイムテーブル', 'チケット申込み'],
-    scale: '1ページ・約4週間',
   },
 };
 

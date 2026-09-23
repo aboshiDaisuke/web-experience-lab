@@ -180,7 +180,7 @@ export default function Contact({
               <textarea
                 rows={4}
                 value={form.message}
-                placeholder="例：美容室を開業予定です。LUMINAのような予約しやすいサイトにしたいです。"
+                placeholder="例：美容室を開業予定です。LUMINA MIRAIのような予約しやすいサイトにしたいです。"
                 onChange={(e) => set('message', e.target.value)}
               />
             </label>

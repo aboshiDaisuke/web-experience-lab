@@ -1,0 +1,936 @@
+/* 3D property tour — modal viewer (components/tour/tour-viewer.tsx) */
+.tour-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--tp-paper, #eeeee6);
+  color: var(--tp-ink, #26332a);
+  overflow: hidden;
+  outline: none;
+  animation: tour-in 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.tour-dialog::backdrop {
+  background: rgb(22 29 24 / 0.55);
+  animation: tour-fade 0.4s ease both;
+}
+.tour-dialog[data-closing='true'] {
+  animation: tour-out 0.26s ease both;
+}
+.tour-dialog[data-closing='true']::backdrop {
+  animation: tour-fade 0.26s ease reverse both;
+}
+@keyframes tour-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+@keyframes tour-out {
+  to {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+}
+@keyframes tour-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.tour {
+  /* property palette (inline --tp-* from the config), day values */
+  --t-paper: var(--tp-paper, #eeeee6);
+  --t-brand: var(--tp-accent, var(--t-brand));
+  --t-brand-ink: #f7f7f2;
+  --t-dark: var(--tp-ink, var(--t-dark));
+  --t-ink: var(--t-dark);
+  --t-muted: color-mix(in srgb, var(--t-dark) 58%, var(--t-paper));
+  --t-accent: var(--t-brand);
+  --t-accent-ink: var(--t-brand-ink);
+  --t-panel: color-mix(in srgb, var(--t-paper) 86%, transparent);
+  --t-panel-solid: var(--t-paper);
+  --t-line: color-mix(in srgb, var(--t-dark) 13%, transparent);
+  --t-soft: color-mix(in srgb, var(--t-dark) 6%, transparent);
+  --t-shadow: 0 12px 40px rgb(24 34 27 / 0.14), 0 1px 2px rgb(24 34 27 / 0.08);
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--t-paper) 88%, var(--t-dark));
+  color: var(--t-ink);
+  font-family: var(--font-sans, 'Hiragino Sans', 'Yu Gothic', sans-serif);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+.tour[data-night='true'] {
+  --t-ink: #e9ece3;
+  --t-muted: #a6b0a0;
+  --t-accent: var(--tp-night-accent, #d9c7a2);
+  --t-accent-ink: #1d231f;
+  --t-panel: rgb(26 32 29 / 0.8);
+  --t-panel-solid: #1e2521;
+  --t-line: rgb(233 236 227 / 0.12);
+  --t-soft: rgb(233 236 227 / 0.07);
+  --t-shadow: 0 12px 40px rgb(0 0 0 / 0.35);
+}
+.tour *,
+.tour *::before,
+.tour *::after {
+  box-sizing: border-box;
+}
+:where(.tour) button {
+  font: inherit;
+  color: inherit;
+  letter-spacing: 0.04em;
+  -webkit-tap-highlight-color: transparent;
+}
+.tour button:focus-visible,
+.tour canvas:focus-visible {
+  outline: 2px solid var(--t-accent);
+  outline-offset: 2px;
+}
+.tour button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.tour h2,
+.tour h3,
+.tour p {
+  margin: 0;
+}
+.tour-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.tour-eyebrow {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  color: var(--t-muted);
+}
+
+/* ---------------------------------------------------------------- stage */
+.tour-stage,
+.tour-overlays {
+  position: absolute;
+  inset: 0;
+}
+.tour-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  outline: none;
+  cursor: grab;
+}
+.tour-canvas:active {
+  cursor: grabbing;
+}
+.tour-blink {
+  position: absolute;
+  inset: 0;
+  background: var(--t-paper);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.26s ease;
+}
+.tour-blink.on {
+  opacity: 1;
+}
+.tour-overlays {
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* engine-positioned overlays: transform = screen position, translate = anchor */
+.tour-label,
+.tour-pin,
+.tour-hover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform, opacity;
+  transition:
+    opacity 0.3s ease,
+    visibility 0s linear 0.3s;
+}
+.tour-label[data-on='false'],
+.tour-pin[data-on='false'],
+.tour-hover[data-on='false'] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.tour-label[data-on='true'],
+.tour-pin[data-on='true'],
+.tour-hover[data-on='true'] {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.3s ease,
+    visibility 0s;
+}
+.tour-label {
+  translate: -50% -100%;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 12px 7px;
+  border-radius: 999px;
+  background: rgb(250 250 246 / 0.92);
+  color: var(--t-dark);
+  box-shadow: 0 6px 18px rgb(24 34 27 / 0.16);
+  font-size: 12.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tour-label::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 1px;
+  height: 7px;
+  background: rgb(250 250 246 / 0.9);
+}
+.tour-label:hover {
+  background: var(--t-brand);
+  color: var(--t-brand-ink);
+}
+.tour-label small {
+  font-size: 10.5px;
+  color: var(--t-muted);
+  letter-spacing: 0.04em;
+}
+.tour-label:hover small {
+  color: color-mix(in srgb, var(--t-brand-ink) 75%, transparent);
+}
+.tour[data-mode='plan'] .tour-label {
+  translate: -50% -50%;
+  border-radius: 8px;
+  padding: 5px 10px 6px;
+  background: rgb(250 250 246 / 0.88);
+  box-shadow: 0 2px 10px rgb(24 34 27 / 0.12);
+}
+.tour[data-mode='plan'] .tour-label::after {
+  display: none;
+}
+.tour-pin {
+  translate: -50% -50%;
+  pointer-events: auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(250 250 246 / 0.94);
+  color: var(--t-brand);
+  box-shadow:
+    0 0 0 5px rgb(250 250 246 / 0.25),
+    0 6px 16px rgb(24 34 27 / 0.22);
+  cursor: pointer;
+}
+.tour-pin > svg {
+  transition: transform 0.3s ease;
+}
+.tour-pin[aria-expanded='true'] {
+  background: var(--t-brand);
+  color: var(--t-brand-ink);
+}
+.tour-pin[aria-expanded='true'] > svg {
+  transform: rotate(45deg);
+}
+.tour-pin-title {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  translate: 0 -50%;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgb(24 32 27 / 0.82);
+  color: #f1f3ec;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.tour-pin:hover .tour-pin-title,
+.tour-pin:focus-visible .tour-pin-title {
+  opacity: 1;
+}
+.tour-hover {
+  translate: -50% -100%;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgb(24 32 27 / 0.8);
+  color: #f1f3ec;
+  font-size: 12.5px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tour-hover:empty {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- chrome */
+.tour-top {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  pointer-events: none;
+  z-index: 3;
+}
+.tour-top > * {
+  pointer-events: auto;
+}
+.tour-brand,
+.tour-actions > *,
+.tour-panel,
+.tour-dock,
+.tour-card,
+.tour-minimap,
+.tour-sheet {
+  background: var(--t-panel);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(16px) saturate(1.1);
+  border: 1px solid var(--t-line);
+  box-shadow: var(--t-shadow);
+  color: var(--t-ink);
+  transition:
+    background-color 0.6s ease,
+    color 0.6s ease,
+    border-color 0.6s ease;
+}
+.tour-brand {
+  padding: 12px 18px 13px;
+  border-radius: 12px;
+  min-width: 220px;
+}
+.tour-brand strong {
+  display: block;
+  margin-top: 2px;
+  font:
+    500 18px/1.3 Arial,
+    sans-serif;
+  letter-spacing: 0.14em;
+}
+.tour-place {
+  display: block;
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: var(--t-muted);
+}
+.tour-actions {
+  display: flex;
+  gap: 8px;
+}
+.tour-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.tour-icon[aria-pressed='true'] {
+  color: var(--t-accent);
+}
+.tour-close {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px 0 13px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  background: var(--t-brand) !important;
+  color: var(--t-brand-ink) !important;
+  border-color: transparent !important;
+}
+.tour-close:hover {
+  background: color-mix(in srgb, var(--t-brand) 82%, #000) !important;
+}
+
+/* room list */
+.tour-panel {
+  position: absolute;
+  z-index: 2;
+  top: 108px;
+  left: 16px;
+  width: 244px;
+  max-height: calc(100% - 210px);
+  overflow: auto;
+  padding: 16px 10px 12px;
+  border-radius: 12px;
+  transition:
+    opacity 0.35s ease,
+    translate 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
+    background-color 0.6s ease;
+  scrollbar-width: thin;
+}
+.tour[data-panel='false'] .tour-panel {
+  opacity: 0;
+  translate: -24px 0;
+  pointer-events: none;
+}
+.tour-panel > h2,
+.tour-sheet-head h2 {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--t-muted);
+  padding: 0 8px 6px;
+}
+.tour-roomlist section + section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--t-line);
+}
+.tour-roomlist h3 {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px 4px;
+  letter-spacing: 0.1em;
+}
+.tour-roomlist ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tour-zone {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px 2px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.tour-zone small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--t-muted);
+}
+.tour-roomlist li button {
+  position: relative;
+  width: 100%;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.tour-roomlist li.in-zone button {
+  padding-left: 20px;
+}
+.tour-roomlist li.in-zone button::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 5px;
+  height: 1px;
+  background: var(--t-muted);
+  opacity: 0.6;
+}
+.tour-roomlist li button small {
+  flex: none;
+  font-size: 11px;
+  color: var(--t-muted);
+}
+.tour-roomlist li button:hover:not(:disabled) {
+  background: var(--t-soft);
+}
+.tour-roomlist li button[aria-current] {
+  background: var(--t-accent);
+  color: var(--t-accent-ink);
+}
+.tour-roomlist li button[aria-current] small {
+  color: inherit;
+  opacity: 0.75;
+}
+
+/* dock */
+.tour-dock {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 20px;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 14px;
+}
+.tour-seg {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+  padding: 3px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--t-soft);
+}
+.tour-seg button {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+.tour-seg button:hover:not(:disabled):not([aria-pressed='true']) {
+  background: var(--t-soft);
+}
+.tour-seg button[aria-pressed='true'] {
+  background: var(--t-accent);
+  color: var(--t-accent-ink);
+}
+.tour-light button {
+  padding: 0 12px;
+}
+.tour-seg-label {
+  display: flex;
+  align-items: center;
+  padding: 0 6px 0 9px;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  color: var(--t-muted);
+  white-space: nowrap;
+}
+.tour-views button {
+  padding: 0 11px;
+}
+.tour-views[aria-busy='true'] button[aria-pressed='true'] {
+  animation: tour-pulse 0.8s ease-in-out infinite alternate;
+}
+.tour-light button[aria-busy='true'] svg {
+  animation: tour-pulse 1s ease-in-out infinite alternate;
+}
+@keyframes tour-pulse {
+  to {
+    opacity: 0.3;
+  }
+}
+
+/* minimap */
+.tour-minimap {
+  position: absolute;
+  z-index: 2;
+  right: 16px;
+  bottom: 20px;
+  width: 212px;
+  height: 164px;
+  border-radius: 12px;
+  overflow: hidden;
+  opacity: 0;
+  translate: 0 10px;
+  pointer-events: none;
+  transition:
+    opacity 0.4s ease,
+    translate 0.4s ease,
+    background-color 0.6s ease;
+}
+.tour[data-mode='walk'] .tour-minimap {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+.tour-minimap canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: pointer;
+}
+.tour-minimap span {
+  position: absolute;
+  left: 10px;
+  top: 7px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--t-muted);
+  pointer-events: none;
+}
+
+/* info card */
+.tour-card {
+  position: absolute;
+  z-index: 3;
+  right: 16px;
+  bottom: 96px;
+  width: min(320px, calc(100% - 32px));
+  padding: 18px 20px 20px;
+  border-radius: 12px;
+  animation: tour-card 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes tour-card {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+.tour-card h2 {
+  margin-top: 6px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.tour-card p {
+  margin-top: 8px;
+  font-size: 13.5px;
+  line-height: 1.85;
+  color: var(--t-ink);
+  opacity: 0.86;
+}
+.tour-card .tour-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+}
+
+/* hint */
+.tour-hint {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 92px;
+  translate: -50% 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgb(22 29 24 / 0.72);
+  color: #f1f3ec;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.tour-hint[data-on='true'] {
+  opacity: 1;
+}
+
+/* loading */
+.tour-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(
+    120% 90% at 50% 40%,
+    color-mix(in srgb, var(--t-paper) 70%, #fff) 0%,
+    var(--t-paper) 70%,
+    color-mix(in srgb, var(--t-paper) 92%, var(--t-dark)) 100%
+  );
+  color: var(--t-dark);
+  transition:
+    opacity 0.8s ease 0.1s,
+    visibility 0s linear 0.9s;
+}
+.tour-loading[data-on='false'] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.tour-loading-inner {
+  width: min(320px, calc(100% - 48px));
+  text-align: center;
+}
+.tour-loading-inner strong {
+  display: block;
+  margin-top: 6px;
+  font:
+    500 24px/1.3 Arial,
+    sans-serif;
+  letter-spacing: 0.16em;
+}
+.tour-progress {
+  display: block;
+  width: 100%;
+  height: 2px;
+  margin: 28px 0 14px;
+  border: 0;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--t-brand) 14%, transparent);
+  color: var(--t-brand);
+  overflow: hidden;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.tour-progress::-webkit-progress-bar {
+  background: color-mix(in srgb, var(--t-brand) 14%, transparent);
+}
+.tour-progress::-webkit-progress-value {
+  background: var(--t-brand);
+  transition: width 0.3s ease;
+}
+.tour-progress::-moz-progress-bar {
+  background: var(--t-brand);
+}
+.tour-loading p {
+  font-size: 12.5px;
+  color: var(--t-muted);
+  letter-spacing: 0.08em;
+}
+.tour-loading p span {
+  font-variant-numeric: tabular-nums;
+  margin-left: 6px;
+}
+.tour-loading-inner > div {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+.tour-retry {
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  background: var(--t-brand) !important;
+  color: var(--t-brand-ink) !important;
+  cursor: pointer;
+}
+.tour-retry.ghost {
+  background: transparent !important;
+  color: var(--t-brand) !important;
+  border: 1px solid color-mix(in srgb, var(--t-brand) 30%, transparent) !important;
+}
+
+/* sheet (mobile) */
+.tour .mobile-only {
+  display: none;
+}
+.tour-sheet:not([open]) {
+  display: none !important;
+}
+.tour-sheet {
+  margin: 0;
+  color: var(--t-ink);
+}
+
+@media (max-width: 760px) {
+  .tour .desktop-only {
+    display: none;
+  }
+  .tour .mobile-only {
+    display: flex;
+  }
+  .tour-top {
+    top: max(10px, env(safe-area-inset-top));
+    left: 10px;
+    right: 10px;
+  }
+  .tour-brand {
+    min-width: 0;
+    padding: 8px 12px 9px;
+    border-radius: 10px;
+  }
+  .tour-brand .tour-eyebrow {
+    display: none;
+  }
+  .tour-brand strong {
+    font-size: 14px;
+  }
+  .tour-place {
+    font-size: 11.5px;
+    margin-top: 1px;
+  }
+  .tour-actions {
+    gap: 6px;
+  }
+  .tour-close {
+    padding: 0 12px 0 10px;
+  }
+  .tour-panel {
+    display: none;
+  }
+  .tour-dock {
+    left: 8px;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    translate: none;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 5px;
+    border-radius: 14px;
+  }
+  .tour-modes {
+    flex: 1 0 100%;
+  }
+  .tour-modes button {
+    flex: 1;
+    padding: 0 6px;
+    gap: 5px;
+    font-size: 12.5px;
+  }
+  .tour-floors,
+  .tour-light,
+  .tour-views {
+    flex: none;
+  }
+  .tour-seg-label {
+    padding: 0 4px 0 6px;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+  .tour-views button {
+    padding: 0 8px;
+  }
+  .tour-seg button {
+    height: 40px;
+    padding: 0 11px;
+    font-size: 12.5px;
+  }
+  .tour-sheet-btn {
+    flex: 1;
+    height: 46px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    background: var(--t-soft);
+    cursor: pointer;
+  }
+  .tour-sheet-btn[aria-expanded='true'] {
+    background: var(--t-accent);
+    color: var(--t-accent-ink);
+  }
+  .tour-minimap {
+    left: auto;
+    right: 10px;
+    top: calc(max(10px, env(safe-area-inset-top)) + 58px);
+    bottom: auto;
+    width: 128px;
+    height: 100px;
+    border-radius: 10px;
+  }
+  .tour-minimap span {
+    font-size: 10px;
+    top: 4px;
+    left: 8px;
+  }
+  .tour-card {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + 112px);
+  }
+  .tour-hint {
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + 118px);
+    font-size: 12px;
+  }
+  .tour-sheet {
+    position: absolute;
+    z-index: 4;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    max-width: none;
+    max-height: 64%;
+    flex-direction: column;
+    padding: 12px 10px calc(16px + env(safe-area-inset-bottom));
+    border-radius: 18px 18px 0 0;
+    background: var(--t-panel-solid);
+    overflow: auto;
+    animation: tour-sheet 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .tour-sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 2px;
+  }
+  .tour-sheet-head h2 {
+    padding-bottom: 0;
+  }
+  .tour-sheet .tour-roomlist li button {
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .tour-label {
+    font-size: 11.5px;
+    padding: 5px 10px 6px;
+  }
+}
+@keyframes tour-sheet {
+  from {
+    translate: 0 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-dialog,
+  .tour-dialog::backdrop,
+  .tour-card,
+  .tour-sheet {
+    animation: none;
+  }
+}
+
+/* CASA page: secondary entry from the floor-plan section */
+.plan-tour-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgb(61 81 65 / 0.35) !important;
+  border-radius: 0;
+  color: #3d5141;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+.plan-tour-button:hover {
+  background: #3d5141;
+  color: #f2f4ec;
+}

@@ -8,9 +8,6 @@ import {
   Minus,
   Menu,
   X,
-  Sun,
-  Moon,
-  MoveHorizontal,
   Check,
   Volume2,
   Box,
@@ -27,6 +24,9 @@ import Scene from './scene';
 import BrandDepth from './brand-depth';
 import DemoInquiry from './demo-inquiry';
 import ProjectMotion from './project-motion';
+import TourModal from './tour/tour-viewer';
+import { openTour } from '@/lib/tour/bus';
+import LuceSite from './luce-site';
 import { Slider } from '@/components/ui/slider';
 import {
   Dialog,
@@ -55,9 +55,6 @@ export default function ProjectExperience({
   const [menu, setMenu] = useState(false);
   const [inquiry, setInquiry] = useState(false);
   const [tab, setTab] = useState(0);
-  const [view, setView] = useState('EXTERIOR');
-  const [night, setNight] = useState(false);
-  const [interior, setInterior] = useState(false);
   const [explode, setExplode] = useState(0);
   const [picked, setPicked] = useState('PC');
   const [filter, setFilter] = useState('すべて');
@@ -119,6 +116,12 @@ export default function ProjectExperience({
                   ['作品', 'details'],
                   ['プロフィール', 'story'],
                 ]
+              : p.slug === 'luce'
+                ? [
+                    ['コンセプト', 'story'],
+                    ['間取り', 'details'],
+                    ['ロケーション', 'access'],
+                  ]
               : [
                   ['コンセプト', 'story'],
                   ['詳しく見る', 'details'],
@@ -144,45 +147,49 @@ export default function ProjectExperience({
         <a className="site-wordmark" href="#top">
           {p.slug === 'nova' ? (
             <>
-              NOVA<span>INDUSTRIES</span>
+              MIRAI NOVA<span>PRECISION ENGINEERING</span>
             </>
           ) : p.slug === 'lumina' ? (
             <>
-              lumina<span>HAIR DESIGN / TOKYO</span>
+              lumina mirai<span>HAIR DESIGN / TOKYO</span>
             </>
           ) : p.slug === 'noir' ? (
             <>
-              NOIR TABLE<span>CUISINE DE SAISON</span>
+              TABLE 未来<span>CUISINE DE SAISON</span>
             </>
           ) : p.slug === 'eclat' ? (
             <>
-              ÉCLAT<span>MAISON DE CUIR</span>
+              MAISON MIRAI<span>ARTISANS DU CUIR</span>
             </>
           ) : p.slug === 'casa' ? (
             <>
-              CASA <i>N01</i>
+              CASA <i>MIRAI</i>
             </>
           ) : p.slug === 'yui' ? (
             <>
-              YUI TAKAHASHI<span>PHOTOGRAPHER / TOKYO</span>
+              MIRAI TAKAHASHI<span>PHOTOGRAPHER / TOKYO</span>
             </>
           ) : p.slug === 'offgrid' ? (
             <>
-              OFF
+              OFF GRID
               <br />
-              THE GRID<span>OUTDOOR WEEKENDER</span>
+              みらい<span>OUTDOOR WEEKENDER</span>
             </>
           ) : p.slug === 'room' ? (
             <>
-              ROOM<span>A CREATIVE STUDIO</span>
+              MIRAI ROOM<span>A CREATIVE STUDIO</span>
+            </>
+          ) : p.slug === 'luce' ? (
+            <>
+              MIRAI HILLS<span>MEGURO RESIDENCE</span>
             </>
           ) : p.slug === 'adapt' ? (
             <>
-              adapt<span>A WEBSITE, LIKE YOU.</span>
+              mirai<span>A WEBSITE, LIKE YOU.</span>
             </>
           ) : (
             <>
-              AETHER<span>DESIGNED AROUND SOUND</span>
+              MIRAI<span>DESIGNED AROUND SOUND</span>
             </>
           )}
         </a>
@@ -201,7 +208,9 @@ export default function ProjectExperience({
                   ? 'チケット'
                   : p.slug === 'eclat'
                     ? '来店のご相談'
-                    : 'お問い合わせ'}
+                    : p.slug === 'luce'
+                      ? '資料請求'
+                      : 'お問い合わせ'}
             <ArrowUpRight size={15} />
           </button>
         </nav>
@@ -229,7 +238,7 @@ export default function ProjectExperience({
               <p>
                 精密なものづくりで、産業の未来を支える。
                 <br />
-                ノヴァ・インダストリーズ。
+                MIRAI NOVA（ミライ・ノヴァ）。
               </p>
               <a className="line-button" href="#details">
                 私たちの事業 <ArrowRight size={18} />
@@ -248,7 +257,7 @@ export default function ProjectExperience({
                 name={['machine', 'engineer', 'architecture'][heroSlide]}
                 alt="ものづくりの現場と精密技術"
               />
-              <span>NOVA / TECHNOLOGY IN EVERY DETAIL</span>
+              <span>MIRAI NOVA / TECHNOLOGY IN EVERY DETAIL</span>
               <div className="hero-photo-select">
                 {['精密技術', 'つくる人', 'デザイン'].map((t, i) => (
                   <button
@@ -388,7 +397,7 @@ export default function ProjectExperience({
             <div className="lumina-photo">
               <Img name="fashion" alt="柔らかなウェーブスタイル" />
             </div>
-            <span className="lumina-big">lumina</span>
+            <span className="lumina-big">mirai</span>
             <span className="lumina-edition">
               NEW SEASON
               <br />
@@ -566,7 +575,7 @@ export default function ProjectExperience({
           </section>
           <section id="access" className="site-section access-section">
             <span className="section-kicker">VISIT US</span>
-            <h2>NOIR TABLE</h2>
+            <h2>TABLE 未来</h2>
             <div>
               <p>
                 東京・青山エリアを想定した架空のレストラン
@@ -680,7 +689,7 @@ export default function ProjectExperience({
         <>
           <section id="top" className="aether-cover">
             <div className="aether-copy">
-              <span className="overline">AETHER ONE / WIRELESS SPEAKER</span>
+              <span className="overline">MIRAI ONE / WIRELESS SPEAKER</span>
               <h1>
                 音のかたちを、
                 <br />
@@ -782,16 +791,12 @@ export default function ProjectExperience({
       )}
       {p.slug === 'casa' && (
         <>
-          <section id="top" className={`casa-cover ${night ? 'night' : ''}`}>
+          <section id="top" className="casa-cover">
             <div className="casa-visual">
-              {interior ? (
-                <Scene kind="house" view={view} night={night} />
-              ) : (
-                <Img
-                  name="house"
-                  alt="大きなガラス窓とコンクリートが特徴の住宅"
-                />
-              )}
+              <Img
+                name="house"
+                alt="大きなガラス窓とコンクリートが特徴の住宅"
+              />
             </div>
             <div className="casa-copy">
               <span className="overline">A HOUSE FOR SLOW LIVING</span>
@@ -800,38 +805,17 @@ export default function ProjectExperience({
                 <br />
                 暮らしていく。
               </h1>
-              <p>CASA N01 — 空間の静けさを、日常に。</p>
+              <p>CASA MIRAI — 空間の静けさを、日常に。</p>
               <button
                 className="solid-button"
-                onClick={() => setInterior(!interior)}
+                aria-haspopup="dialog"
+                onClick={() => openTour({ property: 'casa', mode: 'dollhouse' })}
               >
-                {interior ? '建築写真を見る' : '3Dで内覧する'}
+                3Dで内覧する
                 <Box size={17} />
               </button>
             </div>
-            {interior && (
-              <div className="casa-controls">
-                <div>
-                  {['EXTERIOR', 'LIVING', 'BEDROOM'].map((v, i) => (
-                    <button
-                      key={v}
-                      aria-pressed={view === v}
-                      onClick={() => setView(v)}
-                    >
-                      {['外観', 'リビング', '寝室'][i]}
-                    </button>
-                  ))}
-                </div>
-                <button aria-pressed={night} onClick={() => setNight(!night)}>
-                  {night ? <Moon size={15} /> : <Sun size={15} />}{' '}
-                  {night ? '夜' : '昼'}
-                </button>
-                <span>
-                  <MoveHorizontal size={16} />
-                  ドラッグで回転
-                </span>
-              </div>
-            )}
+            <TourModal propertyId="casa" />
             <div className="casa-project-meta">
               <span>RESIDENTIAL / CONCEPT 01</span>
               <span>CONCRETE · GLASS · LIGHT</span>
@@ -861,7 +845,7 @@ export default function ProjectExperience({
             <dl className="spec-list">
               <div>
                 <dt>プロジェクト</dt>
-                <dd>CASA N01 / コンセプト住宅</dd>
+                <dd>CASA MIRAI / コンセプト住宅</dd>
               </div>
               <div>
                 <dt>空間構成</dt>
@@ -989,7 +973,7 @@ export default function ProjectExperience({
                 <i>余白を写す。</i>
               </h1>
               <p>
-                Yui Takahashi
+                Mirai Takahashi
                 <br />
                 Photography & Art Direction
               </p>
@@ -1044,7 +1028,7 @@ export default function ProjectExperience({
           </section>
           <section id="story" className="site-section photographer-story">
             <span className="section-kicker">ABOUT</span>
-            <h2>高橋 ゆい</h2>
+            <h2>高橋 みらい</h2>
             <p>
               写真家・アートディレクター。
               <br />
@@ -1139,6 +1123,9 @@ export default function ProjectExperience({
             </p>
           </section>
         </>
+      )}
+      {p.slug === 'luce' && (
+        <LuceSite onInquiry={openInquiry} onTour={(room) => openTour('luce', room)} />
       )}
       {p.slug === 'offgrid' && (
         <>
@@ -1289,7 +1276,9 @@ export default function ProjectExperience({
                 ? '次のひと皿は、あなたの席で。'
                 : p.slug === 'nova'
                   ? 'その課題から、未来をつくろう。'
-                  : 'つづきは、あなたと。'}
+                  : p.slug === 'luce'
+                    ? 'この眺めを、確かめに。'
+                    : 'つづきは、あなたと。'}
           </h2>
         </div>
         <button onClick={openInquiry}>
@@ -1325,7 +1314,9 @@ export default function ProjectExperience({
               ? 'お席のご予約'
               : p.slug === 'offgrid'
                 ? 'チケットのお申し込み'
-                : 'お問い合わせ'
+                : p.slug === 'luce'
+                  ? '資料請求・モデルルーム来場予約'
+                  : 'お問い合わせ'
         }
         summary={
           p.slug === 'offgrid'
@@ -1339,7 +1330,7 @@ export default function ProjectExperience({
         <DialogContent className="photo-dialog">
           <DialogTitle>作品を大きく見る</DialogTitle>
           <DialogDescription>
-            YUI TAKAHASHI / SELECTED PHOTOGRAPHS
+            MIRAI TAKAHASHI / SELECTED PHOTOGRAPHS
           </DialogDescription>
           {photo && <Img name={photo} alt="選択した写真作品" />}
         </DialogContent>

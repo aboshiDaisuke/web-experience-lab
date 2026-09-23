@@ -368,9 +368,9 @@ const mount: Signature = (ctx) => {
   block.className = "casa-sig-titleblock";
   block.setAttribute("aria-hidden", "true");
   block.innerHTML =
-    '<span class="tb-name">CASA N01</span><span class="tb-no">A-201</span>' +
+    '<span class="tb-name">CASA MIRAI</span><span class="tb-no">A-201</span>' +
     '<span class="tb-title">南側立面図</span><span class="tb-scale">S = 1:100</span>' +
-    '<span class="tb-by">設計 — N01 アトリエ</span><span class="tb-date">2026.09</span>';
+    '<span class="tb-by">設計 — MIRAI アトリエ</span><span class="tb-date">2026.09</span>';
   const clock = document.createElement("div");
   clock.className = "casa-sig-clock";
   clock.setAttribute("aria-hidden", "true");

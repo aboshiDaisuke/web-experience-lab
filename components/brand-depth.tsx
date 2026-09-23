@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/accordion';
 import { Slider } from '@/components/ui/slider';
 import Scene from './scene';
+import { openTour } from '@/lib/tour/bus';
 const Photo = ({ name, alt }: { name: string; alt: string }) => (
   <img src={`/images/${name}.jpg`} alt={alt} loading="lazy" />
 );
@@ -60,7 +61,7 @@ export default function BrandDepth({
           <div className="depth-photo">
             <Photo name="machine" alt="精密な産業用機械のディテール" />
             <span className="image-index">
-              INSIDE NOVA / PRECISION ENGINEERING
+              INSIDE MIRAI NOVA / PRECISION ENGINEERING
             </span>
           </div>
           <div className="technology-copy">
@@ -283,7 +284,7 @@ export default function BrandDepth({
               <br />
               そんなスタイルを届けたい。」
             </blockquote>
-            <span className="stylist-signature">LUMINA / STYLING TEAM</span>
+            <span className="stylist-signature">LUMINA MIRAI / STYLING TEAM</span>
           </div>
         </section>
         <section className="site-section">
@@ -328,7 +329,7 @@ export default function BrandDepth({
               その日のいちばん美しい姿を、一皿へ。
             </p>
             <span className="chef-signature">
-              NOIR TABLE — CHEF'S PHILOSOPHY
+              TABLE 未来 — CHEF'S PHILOSOPHY
             </span>
           </div>
         </section>
@@ -401,7 +402,7 @@ export default function BrandDepth({
         <section className="restaurant-space">
           <Photo name="restaurant" alt="落ち着いたレストランのダイニング" />
           <div>
-            <span className="section-kicker">YOUR EVENING, AT NOIR TABLE.</span>
+            <span className="section-kicker">YOUR EVENING, AT TABLE 未来.</span>
             <h2>
               食事を、
               <br />
@@ -666,6 +667,21 @@ export default function BrandDepth({
                 ][choice]
               }
             </p>
+            <button
+              type="button"
+              className="plan-tour-button"
+              aria-haspopup="dialog"
+              onClick={() =>
+                openTour({
+                  property: 'casa',
+                  mode: 'walk',
+                  room: ['living', 'master', 'terrace'][choice],
+                })
+              }
+            >
+              この部屋を3Dで見る
+              <ArrowUpRight size={15} aria-hidden="true" />
+            </button>
           </div>
         </section>
         <section className="site-section material-palette">
@@ -719,9 +735,9 @@ export default function BrandDepth({
           <h2>部屋から生まれた、3つの実験。</h2>
           <div>
             {[
-              ['aether', 'AETHER ONE', '音を、見えるものに。', 'architecture'],
+              ['aether', 'MIRAI ONE', '音を、見えるものに。', 'architecture'],
               ['yui', 'VISUAL DIARY', '日々を、記憶に残す。', 'hotel'],
-              ['adapt', 'ADAPT / YOU', '好みを、かたちにする。', 'fashion'],
+              ['adapt', 'MIRAI / YOU', '好みを、かたちにする。', 'fashion'],
             ].map(([slug, t, d, img]) => (
               <a href={`/works/${slug}`} key={slug}>
                 <Photo name={img} alt={d} />
@@ -757,7 +773,7 @@ export default function BrandDepth({
               <p>
                 シャッターを切る前に、その場所の時間を少しだけ過ごす。写真に残したいのは、景色だけではないから。
               </p>
-              <span className="journal-signature">Yui Takahashi</span>
+              <span className="journal-signature">Mirai Takahashi</span>
             </div>
           </div>
         </section>
@@ -834,6 +850,7 @@ export default function BrandDepth({
         </section>
       </div>
     );
+  if (slug !== 'offgrid') return null;
   return (
     <div id="features" className="brand-depth">
       <section className="site-section festival-guide">

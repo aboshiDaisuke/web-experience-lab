@@ -39,3 +39,13 @@ next-env.d.ts
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# Blender source assets (Poly Haven CC0, large) and bake outputs
+/tools/blender/tex/
+/tools/blender/hdri/
+/tools/blender/models/
+/tools/blender/impostors/
+/tools/blender/out/
+/tools/blender/*.blend
+/tools/blender/*.blend1
+.playwright-mcp/

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import './studio.css';
+import './luce.css';
 import './signatures/nova.css';
 import './signatures/lumina.css';
 import './signatures/noir.css';
@@ -11,10 +12,11 @@ import './signatures/room.css';
 import './signatures/yui.css';
 import './signatures/adapt.css';
 import './signatures/offgrid.css';
+import './tour.css';
 export const metadata: Metadata = {
   title: 'Web Experience Lab — 触れて伝わるWebサイト制作',
   description:
-    '企業サイト、美容室、レストラン、3D製品ページまで。実際に操作できる10の制作サンプルと、料金・制作の流れ・ご相談窓口。',
+    '企業サイト、美容室、レストラン、3D製品ページまで。実際に操作できる11の制作サンプルと、料金・制作の流れ・ご相談窓口。',
 };
 export default function RootLayout({
   children,

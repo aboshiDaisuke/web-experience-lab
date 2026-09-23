@@ -1,0 +1,514 @@
+/* LUCE HILLS 目黒 — condominium sales site (sample) */
+.site-luce {
+  --site-accent: #a8844f;
+  --luce-ink: #16202a;
+  --luce-paper: #f3f4f2;
+  --luce-line: rgba(22, 32, 42, 0.14);
+  background: var(--luce-paper);
+  color: var(--luce-ink);
+}
+.site-luce .site-wordmark {
+  font-family: 'Zen Old Mincho', 'Yu Mincho', serif;
+  font-size: 26px;
+  letter-spacing: 0.24em;
+}
+.site-luce .site-wordmark span {
+  letter-spacing: 0.14em;
+}
+.site-luce h2 {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  font-family: 'Zen Old Mincho', 'Yu Mincho', serif;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+/* hero */
+.luce-cover {
+  position: relative;
+  height: min(88vh, 820px);
+  min-height: 560px;
+  overflow: hidden;
+  background: #0f1720;
+  color: #fff;
+}
+.luce-pano {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  touch-action: pan-y;
+}
+.luce-pano:active {
+  cursor: grabbing;
+}
+.luce-pano canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+.luce-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(10, 16, 24, 0.72) 0%, rgba(10, 16, 24, 0.25) 42%, transparent 62%),
+    linear-gradient(0deg, rgba(10, 16, 24, 0.55) 0%, transparent 32%);
+  opacity: 1;
+}
+.luce-veil::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #0f1720;
+  transition: opacity 1.4s ease;
+}
+.luce-veil.is-ready::after {
+  opacity: 0;
+}
+.luce-copy {
+  position: absolute;
+  left: 7%;
+  bottom: 13%;
+  max-width: 520px;
+  z-index: 2;
+}
+.luce-lead {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: #d9c7a4;
+}
+.luce-copy h1 {
+  margin: 18px 0 20px;
+  font-family: 'Zen Old Mincho', 'Yu Mincho', serif;
+  font-size: clamp(40px, 5vw, 68px);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+}
+.luce-copy > p:not(.luce-lead) {
+  font-size: 15px;
+  line-height: 2;
+  color: rgba(255, 255, 255, 0.86);
+}
+.luce-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+.luce-primary,
+.luce-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 0 24px;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  transition:
+    background 0.25s,
+    color 0.25s,
+    border-color 0.25s;
+}
+.luce-primary {
+  background: #a8844f;
+  color: #fff;
+}
+.luce-primary:hover {
+  background: #8e6d3d;
+}
+.luce-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
+.luce-secondary:hover {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+.luce-elevator {
+  position: absolute;
+  right: 5%;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  display: grid;
+  gap: 6px;
+  width: 230px;
+  padding: 16px;
+  background: rgba(12, 18, 26, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.luce-floor-now {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 2px 4px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  margin-bottom: 6px;
+}
+.luce-floor-now b {
+  font-family: 'Zen Old Mincho', Georgia, serif;
+  font-size: 54px;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: #e8d6b3;
+  min-width: 1.3em;
+}
+.luce-floor-now span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+.luce-elevator button {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.72);
+  border-left: 2px solid transparent;
+  transition:
+    background 0.25s,
+    color 0.25s,
+    border-color 0.25s;
+}
+.luce-elevator button b {
+  font-weight: 500;
+  font-size: 15px;
+  color: inherit;
+}
+.luce-elevator button span {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.luce-elevator button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+.luce-elevator button[aria-pressed='true'] {
+  border-color: #a8844f;
+  background: rgba(168, 132, 79, 0.18);
+  color: #fff;
+}
+.luce-elevator .luce-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  padding-top: 12px;
+  font-size: 13px;
+}
+.luce-drag {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+  pointer-events: none;
+}
+
+/* story */
+.luce-story {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 60px;
+  align-items: center;
+}
+.luce-story h2 {
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.6;
+}
+.luce-story p {
+  margin-top: 22px;
+  line-height: 2.1;
+  color: #4b5560;
+}
+.luce-story figure,
+.luce-plan-photo {
+  margin: 0;
+}
+.luce-story img,
+.luce-plan-photo img,
+.luce-tourband img {
+  height: auto;
+  aspect-ratio: 16 / 10;
+}
+.luce-story figcaption,
+.luce-plan-photo figcaption {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #7a838c;
+}
+
+/* plan */
+.luce-plan {
+  background: #e9ebe8;
+}
+.luce-plan-head h2 {
+  font-size: clamp(28px, 3vw, 40px);
+}
+.luce-plan-head p {
+  margin-top: 8px;
+  color: #4b5560;
+}
+.luce-plan-hint {
+  font-size: 13px;
+}
+.luce-plan-body {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 48px;
+  align-items: center;
+  margin-top: 36px;
+}
+.luce-planmap {
+  width: 100%;
+  height: auto;
+  background: #fbfbfa;
+  padding: 12px;
+}
+.plan-balcony {
+  fill: #e4e2dc;
+  stroke: #b8b4aa;
+  stroke-width: 0.03;
+}
+.plan-room rect {
+  fill: #fff;
+  stroke: var(--luce-ink);
+  stroke-width: 0.06;
+  transition: fill 0.2s;
+}
+.plan-room text {
+  font-size: 0.34px;
+  text-anchor: middle;
+  fill: var(--luce-ink);
+  pointer-events: none;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+}
+.plan-room .plan-size {
+  font-size: 0.28px;
+  fill: #8e6d3d;
+}
+.plan-room {
+  cursor: pointer;
+  outline: none;
+}
+.plan-room:hover rect,
+.plan-room:focus-visible rect {
+  fill: #f1e8d8;
+}
+.plan-note,
+.plan-north {
+  font-size: 0.3px;
+  text-anchor: middle;
+  fill: #7a838c;
+}
+
+/* tour band */
+.luce-tourband {
+  position: relative;
+  display: grid;
+  min-height: 520px;
+  color: #fff;
+  overflow: hidden;
+}
+.luce-tourband img {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  aspect-ratio: auto;
+  filter: brightness(0.62);
+}
+.luce-tourband > div {
+  position: relative;
+  align-self: end;
+  padding: 0 8% 70px;
+  max-width: 640px;
+}
+.luce-tourband h2 {
+  font-size: clamp(28px, 3vw, 40px);
+  font-family: 'Zen Old Mincho', serif;
+  font-weight: 500;
+}
+.luce-tourband p {
+  margin: 16px 0 28px;
+  line-height: 2;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* specs */
+.luce-specs h2,
+.luce-outline h2 {
+  font-size: clamp(26px, 2.6vw, 34px);
+}
+.luce-specs ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--luce-line);
+}
+.luce-specs li {
+  display: grid;
+  gap: 8px;
+  padding: 24px 22px 28px 0;
+  border-bottom: 1px solid var(--luce-line);
+}
+.luce-specs b {
+  font-weight: 500;
+}
+.luce-specs span {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #5b646d;
+}
+
+/* access */
+.luce-access {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 56px;
+  align-items: center;
+}
+.luce-access h2 {
+  font-size: clamp(26px, 2.6vw, 34px);
+}
+.luce-access p {
+  margin: 18px 0 24px;
+  line-height: 2;
+  color: #4b5560;
+}
+.luce-access dl,
+.luce-outline dl {
+  display: grid;
+  margin: 0;
+}
+.luce-access dl > div,
+.luce-outline dl > div {
+  display: grid;
+  grid-template-columns: 11em 1fr;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--luce-line);
+  font-size: 14px;
+}
+.luce-access dd,
+.luce-outline dd {
+  margin: 0;
+}
+.luce-map {
+  width: 100%;
+  height: auto;
+  background: #e6e9e6;
+}
+.map-river {
+  fill: none;
+  stroke: #9fb6c2;
+  stroke-width: 14;
+  stroke-linecap: round;
+}
+.map-road {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 6;
+}
+.map-station {
+  fill: var(--luce-ink);
+}
+.map-site {
+  fill: #a8844f;
+  stroke: #fff;
+  stroke-width: 3;
+}
+.luce-map text {
+  font-size: 12px;
+  fill: var(--luce-ink);
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+}
+.luce-map .map-site-label {
+  font-family: 'Zen Old Mincho', serif;
+  letter-spacing: 0.12em;
+  fill: #8e6d3d;
+}
+.luce-map .map-river-label {
+  fill: #5d7b89;
+}
+.luce-outline dl {
+  margin-top: 26px;
+  max-width: 860px;
+}
+
+@media (max-width: 860px) {
+  .luce-cover {
+    height: 92svh;
+  }
+  .luce-copy {
+    left: 20px;
+    right: 20px;
+    bottom: 132px;
+  }
+  .luce-copy > p:not(.luce-lead) {
+    display: none;
+  }
+  .luce-elevator {
+    top: auto;
+    bottom: 16px;
+    right: 12px;
+    left: 12px;
+    transform: none;
+    width: auto;
+    grid-template-columns: auto repeat(3, 1fr) auto;
+    align-items: center;
+    padding: 8px;
+  }
+  .luce-floor-now {
+    border: 0;
+    padding: 0 8px 0 4px;
+    margin: 0;
+  }
+  .luce-floor-now b {
+    font-size: 34px;
+  }
+  .luce-floor-now span,
+  .luce-elevator button span {
+    display: none;
+  }
+  .luce-elevator button {
+    padding: 10px 6px;
+    text-align: center;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+  }
+  .luce-elevator .luce-time {
+    margin: 0;
+    border: 0;
+    padding: 10px 6px;
+  }
+  .luce-drag {
+    top: 86px;
+    bottom: auto;
+  }
+  .luce-story,
+  .luce-plan-body,
+  .luce-access {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .luce-specs ul {
+    grid-template-columns: 1fr;
+  }
+  .luce-access dl > div,
+  .luce-outline dl > div {
+    grid-template-columns: 8em 1fr;
+  }
+}

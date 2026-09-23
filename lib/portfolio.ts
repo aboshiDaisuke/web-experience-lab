@@ -1,7 +1,7 @@
 export const projects = [
   {
     slug: 'nova',
-    name: 'NOVA INDUSTRIES',
+    name: 'MIRAI NOVA',
     category: '企業・コーポレート',
     type: 'WEB DESIGN',
     image: 'machine',
@@ -14,7 +14,7 @@ export const projects = [
   },
   {
     slug: 'lumina',
-    name: 'LUMINA HAIR',
+    name: 'LUMINA MIRAI',
     category: '美容室・サロン',
     type: 'MOTION DESIGN',
     image: 'fashion',
@@ -27,7 +27,7 @@ export const projects = [
   },
   {
     slug: 'noir',
-    name: 'NOIR TABLE',
+    name: 'TABLE 未来',
     category: '飲食店・レストラン',
     type: 'BRAND EXPERIENCE',
     image: 'dining',
@@ -40,7 +40,7 @@ export const projects = [
   },
   {
     slug: 'eclat',
-    name: 'MAISON ÉCLAT',
+    name: 'MAISON MIRAI',
     category: 'ファッション・ブランド',
     type: 'ART DIRECTION',
     image: 'bag',
@@ -52,8 +52,21 @@ export const projects = [
     note: 'カラーを選んで、製品の表情の違いをご覧ください。',
   },
   {
+    slug: 'luce',
+    name: 'MIRAI HILLS 目黒',
+    category: '不動産・分譲マンション',
+    type: 'REAL ESTATE',
+    image: 'hotel',
+    color: '#a8844f',
+    title: '光の高さで、\n暮らしを選ぶ。',
+    description:
+      '階数ごとの眺望を360°で比べ、Blenderで制作したモデルルームを歩いて内覧できる分譲マンションの販売サイト。',
+    tags: ['眺望シミュレーション', '3Dモデルルーム', '間取り'],
+    note: '5階・12階・20階を選んで眺望を比べ、「3Dで内覧する」でモデルルームを歩けます。',
+  },
+  {
     slug: 'aether',
-    name: 'AETHER ONE',
+    name: 'MIRAI ONE',
     category: 'プロダクト・3D',
     type: '3D EXPERIENCE',
     image: 'architecture',
@@ -66,7 +79,7 @@ export const projects = [
   },
   {
     slug: 'casa',
-    name: 'CASA N01',
+    name: 'CASA MIRAI',
     category: '住宅・建築',
     type: 'ARCHITECTURE',
     image: 'house',
@@ -79,7 +92,7 @@ export const projects = [
   },
   {
     slug: 'room',
-    name: 'THE CREATIVE ROOM',
+    name: 'THE MIRAI ROOM',
     category: '空間・バーチャル',
     type: 'VIRTUAL SPACE',
     image: 'studio',
@@ -92,7 +105,7 @@ export const projects = [
   },
   {
     slug: 'yui',
-    name: 'YUI TAKAHASHI',
+    name: 'MIRAI TAKAHASHI',
     category: '写真・クリエイター',
     type: 'EDITORIAL DESIGN',
     image: 'hotel',
@@ -105,7 +118,7 @@ export const projects = [
   },
   {
     slug: 'adapt',
-    name: 'ADAPT / YOU',
+    name: 'MIRAI / YOU',
     category: 'パーソナライズ',
     type: 'INTERACTIVE DESIGN',
     image: 'studio',
@@ -118,7 +131,7 @@ export const projects = [
   },
   {
     slug: 'offgrid',
-    name: 'OFF THE GRID',
+    name: 'OFF GRID みらい',
     category: 'イベント・キャンペーン',
     type: 'CAMPAIGN DESIGN',
     image: 'outdoors',
