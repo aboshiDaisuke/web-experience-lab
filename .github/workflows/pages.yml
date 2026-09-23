@@ -31,10 +31,11 @@ jobs:
       - run: npm run export
         env:
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
-      - run: mv "out/${{ github.event.repository.name }}" pages
+      # Kept outside the repo: a top-level pages/ folder would be read as Pages Router source.
+      - run: mv "out/${{ github.event.repository.name }}" "$RUNNER_TEMP/site"
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: pages
+          path: ${{ runner.temp }}/site
 
       # Folder to place at /web/ on another site
       - run: npm run export
