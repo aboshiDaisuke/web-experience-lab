@@ -8,10 +8,14 @@ import Works from '@/components/studio/works';
 import WebMCP from '@/components/webmcp';
 import Contact from '@/components/studio/contact';
 import ToTop from '@/components/studio/to-top';
+import Stacks from '@/components/studio/stacks';
+import FeasibilityCheck from '@/components/studio/check';
+import type { Answers } from '@/lib/feasibility';
 
 const nav = [
   ['作品', '#works'],
   ['できること', '#services'],
+  ['つくり方', '#stacks'],
   ['料金', '#plans'],
   ['制作の流れ', '#process'],
 ];
@@ -19,6 +23,8 @@ const byslug = (slug: string) => projects.find((p) => p.slug === slug)!;
 
 export default function Home() {
   const [refSlug, setRefSlug] = useState('');
+  const [stack, setStack] = useState('');
+  const [answers, setAnswers] = useState<Answers>({});
   const [solid, setSolid] = useState(false);
   useEffect(() => {
     const ref = new URLSearchParams(location.search).get('ref');
@@ -89,11 +95,14 @@ export default function Home() {
         </ol>
       </section>
 
+      <Stacks onPick={setStack} />
+      <FeasibilityCheck answers={answers} setAnswers={setAnswers} stack={stack} setStack={setStack} />
+
       <section id="plans" className="st-plans" aria-labelledby="plans-title">
         <div className="st-section-head">
           <h2 id="plans-title">料金の目安</h2>
           <p>
-            ページ数や機能によって変わるため、正式な金額はご相談のあとにお見積りします。いずれも税別です。
+            ページ数や機能、<a href="#setup">サーバーやドメインをお持ちかどうか</a>によって変わるため、正式な金額はご相談のあとにお見積りします。いずれも税別で、サーバーなどの月々の利用料は含みません。
           </p>
         </div>
         <div className="st-plan-grid">
@@ -160,7 +169,13 @@ export default function Home() {
         </div>
       </section>
 
-      <Contact refSlug={refSlug} setRefSlug={setRefSlug} />
+      <Contact
+        refSlug={refSlug}
+        setRefSlug={setRefSlug}
+        stack={stack}
+        setStack={setStack}
+        answers={answers}
+      />
 
       <footer className="st-footer">
         <a href="/" className="st-logo">

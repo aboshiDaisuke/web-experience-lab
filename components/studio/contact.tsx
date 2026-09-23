@@ -1,14 +1,17 @@
 'use client';
 import { useState } from 'react';
 import { projects } from '@/lib/portfolio';
-import { contactEndpoint, plans } from '@/lib/studio';
+import { contactEndpoint, plans, setups, stacks } from '@/lib/studio';
+import { answerRows, evaluate, verdict, type Answers } from '@/lib/feasibility';
 
 const kinds = [...plans.map((p) => p.name), 'まだ決めていない'];
+const envs = [...setups.map((u) => u.name), 'よく分からない'];
 const budgets = ['30万円未満', '30〜60万円', '60〜100万円', '100万円以上', '未定'];
 const timings = ['1か月以内', '2〜3か月後', '半年以内', '未定'];
 type Form = {
   ref: string;
   kind: string;
+  env: string;
   budget: string;
   timing: string;
   name: string;
@@ -19,12 +22,19 @@ type Form = {
 export default function Contact({
   refSlug,
   setRefSlug,
+  stack,
+  setStack,
+  answers,
 }: {
   refSlug: string;
   setRefSlug: (slug: string) => void;
+  stack: string;
+  setStack: (id: string) => void;
+  answers: Answers;
 }) {
   const [form, setForm] = useState<Omit<Form, 'ref'>>({
     kind: kinds[3],
+    env: envs[3],
     budget: budgets[4],
     timing: timings[3],
     name: '',
@@ -37,6 +47,10 @@ export default function Contact({
   const set = (k: keyof typeof form, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
   const refName = projects.find((p) => p.slug === refSlug)?.name ?? '特になし';
+  const stackName = stacks.find((s) => s.id === stack)?.name ?? 'おまかせ';
+  const checked = answerRows(answers);
+  const envKnown = !!(answers.server || answers.domain);
+  const checkVerdict = verdict(evaluate(answers, stack))?.label;
   const check = () => {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = 'お名前を入力してください。';
@@ -54,7 +68,14 @@ export default function Contact({
       const res = await fetch(contactEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ 気になった作品: refName, ...form }),
+        body: JSON.stringify({
+          気になった作品: refName,
+          希望のつくり方: stackName,
+          ...form,
+          ...(envKnown && { env: undefined }),
+          事前チェック: Object.fromEntries(checked),
+          事前チェックの目安: checkVerdict ?? '未回答',
+        }),
       });
       if (!res.ok) throw new Error();
       setStep('done');
@@ -66,6 +87,9 @@ export default function Contact({
   const rows: [string, string][] = [
     ['気になった作品', refName],
     ['ご依頼の種類', form.kind],
+    ['希望のつくり方', stackName],
+    ...(envKnown ? [] : [['サーバー・ドメイン', form.env] as [string, string]]),
+    ...checked,
     ['ご予算', form.budget],
     ['ご希望の時期', form.timing],
     ['お名前', form.name],
@@ -130,6 +154,42 @@ export default function Contact({
                 ))}
               </div>
             </fieldset>
+            <label className="st-field">
+              <span>希望のつくり方</span>
+              <select value={stack} onChange={(e) => setStack(e.target.value)}>
+                <option value="">おまかせ（相談して決めたい）</option>
+                {stacks.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}（{s.kind}）
+                  </option>
+                ))}
+              </select>
+            </label>
+            {checked.length > 0 && (
+              <div className="st-field st-contact-check">
+                <span>
+                  事前チェックの回答も一緒に送ります
+                  <a href="#check">変更する</a>
+                </span>
+                <ul>
+                  {checked.map(([k, v]) => (
+                    <li key={k}>
+                      {k}：<b>{v}</b>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {!envKnown && (
+              <label className="st-field">
+                <span>サーバー・ドメインの状況</span>
+                <select value={form.env} onChange={(e) => set('env', e.target.value)}>
+                  {envs.map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             <div className="st-field-row">
               <label className="st-field">
                 <span>ご予算</span>
