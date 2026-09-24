@@ -104,10 +104,26 @@ export async function mountAquarium(el: HTMLElement, base: string) {
     ...counts.map(([id, n]) => loadFish(base, id, n, env, inject)),
   ]);
   scene.add(hardscape);
-  for (const k of kinds) {
-    k.meshes.forEach((mesh) => scene.add(mesh));
-    tank.add(k);
+  for (const k of kinds) k.meshes.forEach((mesh) => scene.add(mesh));
+
+  // what the fish see around them: the tank itself, captured once from its
+  // middle, so silver flanks and corneas reflect plants, stone and light
+  {
+    kinds.forEach((k) => k.meshes.forEach((m) => (m.visible = false)));
+    caustics.update(0);
+    const pm = new T.PMREMGenerator(renderer);
+    const around = pm.fromScene(scene, 0.03, 1, 300, { size: 256, position: new T.Vector3(0, 26, -20) }).texture;
+    pm.dispose();
+    kinds.forEach((k) =>
+      k.meshes.forEach((m) => {
+        m.visible = true;
+        const mat = m.material as T.MeshPhysicalMaterial;
+        mat.envMap = around;
+      }),
+    );
+    bubbles.mesh.material.envMap = around;
   }
+  for (const k of kinds) tank.add(k);
   // let the schools find their places before anyone sees them
   for (let i = 0; i < 240; i++) tank.step(1 / 30);
   tank.write();
@@ -136,7 +152,46 @@ export async function mountAquarium(el: HTMLElement, base: string) {
   };
   // ?aqdebug=<species>[,index] freezes the tank and looks at one fish from the side
   const debug = new URLSearchParams(location.search).get('aqdebug');
+  // ?aqdebug=studio[,yaw[,species]] lines one fish of each species up in open
+  // water; naming a species fills the frame with it
+  const studio = debug?.startsWith('studio')
+    ? { yaw: +(debug.split(',')[1] ?? 0), focus: debug.split(',')[2] ?? '' }
+    : null;
+  const STUDIO: Record<string, [number, number, number]> = {
+    angel: [-11, 27, -8],
+    discus: [12, 27, -8],
+    neon: [-7, 12, -4],
+    rummy: [9, 12, -4],
+  };
+  const pose = () => {
+    for (const k of tank.kinds)
+      k.fish.forEach((f, i) => {
+        const at = STUDIO[k.kind.id];
+        if (i === 0 && at) {
+          f.p.set(...at);
+          f.fwd.set(Math.cos(studio!.yaw), 0, -Math.sin(studio!.yaw));
+          f.v.copy(f.fwd).multiplyScalar(k.pr.cruise);
+          f.bank = 0;
+          f.bend = 0;
+        } else f.p.set(0, -200, 0);
+      });
+  };
   const place = () => {
+    if (studio) {
+      const at = STUDIO[studio.focus];
+      if (at) {
+        const size = tank.kinds.find((k) => k.kind.id === studio.focus)!.fish[0].scale;
+        // a 4th value zooms towards the head
+        const zoom = +(debug!.split(',')[3] ?? 0);
+        const x = at[0] - size * 0.08 + zoom * size * 0.36;
+        camera.position.set(x, at[1] + size * 0.02, at[2] + size * (1.6 - zoom * 1.25));
+        camera.lookAt(x, at[1], at[2]);
+      } else {
+        camera.position.set(0, 21, 38);
+        camera.lookAt(0, 21, -8);
+      }
+      return;
+    }
     if (debug) {
       const [id, n = '0'] = debug.split(',');
       const k = tank.kinds.find((x) => x.kind.id === id);
@@ -224,7 +279,8 @@ export async function mountAquarium(el: HTMLElement, base: string) {
     const speed = reduced ? 0.35 : 1;
     time += dt * speed;
     if (tank.pointer && now > hoverUntil) tank.pointer = null;
-    if (!debug) tank.step(dt * speed);
+    if (!debug || studio) tank.step(dt * speed);
+    if (studio) pose();
     tank.write();
     for (const k of kinds) k.uniforms.uTime.value = time;
     sway.uTime.value = time;
