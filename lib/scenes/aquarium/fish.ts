@@ -250,13 +250,17 @@ export async function loadFish(
     envMap: env,
   });
   eye.channel = 1;
-  eyeMat.onBeforeCompile = (shader) => patchSwim(shader, uniforms);
+  eyeMat.onBeforeCompile = (shader) => {
+    patchSwim(shader, uniforms);
+    caustics(shader);
+  };
 
   // the clear cornea over the iris: nearly invisible, except for what it reflects
   // black and additive: it contributes only its own reflections and highlight
   const cornea = new T.MeshPhysicalMaterial({
     color: 0x000000,
-    roughness: 0.04,
+    // any smoother and the lamp's highlight overflows the HDR buffer
+    roughness: 0.1,
     metalness: 0,
     ior: 1.38,
     transparent: true,

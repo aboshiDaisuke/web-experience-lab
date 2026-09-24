@@ -1,4 +1,6 @@
 import * as T from 'three';
+import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler.js';
+import { waterGlsl } from './water';
 
 /*
  * The aquascape that isn't Blender-made: the lit back screen, the sloped
@@ -25,6 +27,13 @@ export const HARDSCAPE: { name: string; x: number; z: number; rot: [number, numb
   { name: 'wood_a', x: 28, z: -32, rot: [0.1, 2.6, 0.2], scale: 1.2, sink: 2, clear: 5 },
   { name: 'wood_b', x: -42, z: -36, rot: [0.1, 0.3, -0.2], scale: 1.2, sink: 2, clear: 4 },
 ];
+/*
+ * The surface mirrors only what's high enough for a glancing reflection to
+ * reach: low things (sand, carpet, the foreground plants) go on this layer,
+ * which the camera sees and the mirror doesn't.
+ */
+export const LOW = 1;
+
 export const blocked = (x: number, z: number) =>
   HARDSCAPE.some((h) => (x - h.x) ** 2 + (z - h.z) ** 2 < h.clear ** 2);
 
@@ -42,13 +51,14 @@ export function sandHeight(x: number, z: number) {
 function sandTexture() {
   const size = 512;
   const data = new Uint8Array(size * size * 4);
+  // a light river sand: mostly quartz, some feldspar, the odd dark grain
   const palette = [
-    [206, 190, 160],
-    [186, 168, 138],
-    [150, 136, 112],
-    [226, 214, 190],
-    [120, 110, 96],
-    [170, 150, 120],
+    [236, 224, 200],
+    [218, 202, 172],
+    [196, 180, 150],
+    [248, 242, 228],
+    [150, 136, 118],
+    [214, 190, 154],
   ];
   for (let y = 0; y < size; y++)
     for (let x = 0; x < size; x++) {
@@ -109,35 +119,35 @@ export function createSand(caustics: (s: T.WebGLProgramParametersWithUniforms) =
   };
   const mesh = new T.Mesh(geo, mat);
   mesh.receiveShadow = true;
+  mesh.layers.set(LOW);
   return mesh;
 }
 
-/** The glowing back screen of a planted tank. */
-export function createBackdrop() {
+/**
+ * The back screen of a planted tank: frosted film lit from behind, brightest
+ * high in the middle, seen through the whole depth of the water.
+ */
+export function createBackdrop(surface: number, back: number) {
   const mat = new T.ShaderMaterial({
     uniforms: {},
     vertexShader: /* glsl */ `
-      varying vec2 vUv;
-      void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      varying vec3 vW;
+      void main() { vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
     fragmentShader: /* glsl */ `
-      varying vec2 vUv;
+      ${waterGlsl(surface)}
+      varying vec3 vW;
       void main() {
-        vec2 p = vUv - vec2(0.52, 0.72);
-        float glow = exp(-dot(p * vec2(1.3, 2.4), p * vec2(1.3, 2.4)) * 3.0);
-        vec3 deep = vec3(0.006, 0.035, 0.05);
-        vec3 mid = vec3(0.03, 0.26, 0.33);
-        vec3 hot = vec3(0.26, 0.6, 0.66);
-        vec3 c = mix(deep, mid, smoothstep(0.0, 0.55, glow));
-        c = mix(c, hot, smoothstep(0.55, 1.0, glow));
-        c *= smoothstep(0.0, 0.35, vUv.y) * 0.8 + 0.2;
-        gl_FragColor = vec4(c, 1.0);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
+        vec2 p = (vW.xy - vec2(6.0, ${(surface - 4).toFixed(1)})) / vec2(95.0, 42.0);
+        float glow = exp(-dot(p, p) * 1.6);
+        vec3 c = mix(vec3(0.04, 0.14, 0.19), vec3(0.62, 1.0, 1.15), glow);
+        // the film's lamp sits just above the waterline
+        c += vec3(0.5, 0.6, 0.6) * smoothstep(${(surface - 16).toFixed(1)}, ${surface.toFixed(1)}, vW.y) * glow;
+        c *= 0.35 + 0.65 * smoothstep(0.0, 26.0, vW.y);
+        gl_FragColor = vec4(waterTint(c, vW), 1.0);
       }`,
-    fog: false,
   });
-  const mesh = new T.Mesh(new T.PlaneGeometry(220, 110), mat);
-  mesh.position.set(0, 30, -48);
+  const mesh = new T.Mesh(new T.PlaneGeometry(240, 110), mat);
+  mesh.position.set(0, 30, back);
   return mesh;
 }
 
@@ -272,8 +282,11 @@ function instanced(
   geo: T.BufferGeometry,
   m: { mat: T.Material; depth: T.Material },
   items: Placement[],
-  shadows: { cast: boolean; receive: boolean },
+  shadows: { cast: boolean; receive: boolean; low?: boolean },
 ) {
+  // nearest first, so the depth test turns away the leaves hidden behind
+  // them before they're shaded (the camera looks in from +z)
+  items.sort((a, b) => b.pos.z - a.pos.z);
   const mesh = new T.InstancedMesh(geo, m.mat, items.length);
   const attr = new Float32Array(items.length * 4);
   const mtx = new T.Matrix4();
@@ -288,6 +301,7 @@ function instanced(
   mesh.castShadow = shadows.cast;
   mesh.receiveShadow = shadows.receive;
   mesh.frustumCulled = false;
+  if (shadows.low) mesh.layers.set(LOW);
   return mesh;
 }
 
@@ -318,7 +332,8 @@ export function createPlants(
         const z = cz + rnd(-1, 1);
         const y = sandHeight(x, z) - 0.6;
         const edge = Math.min(Math.abs(x - x0), Math.abs(x1 - x)) / Math.abs(x1 - x0);
-        const h = rnd(18, 44) * (0.7 + edge * 0.6);
+        // most stop short of the surface; the tallest lie along it
+        const h = rnd(16, 38) * (0.7 + edge * 0.6);
         vallis.push({
           pos: new T.Vector3(x, y, z),
           rot: new T.Euler(rnd(-0.12, 0.12), rnd(0, Math.PI), rnd(-0.15, 0.15)),
@@ -347,53 +362,143 @@ export function createPlants(
     ),
   );
 
-  // --- stem plants (Rotala) with pink-orange crowns, massed at the back
-  const stems: Placement[] = [];
-  const clumps: [number, number, number, number, number][] = [
-    [-26, -6, -44, -36, 26],
-    [6, 26, -44, -34, 30],
-    [-6, 6, -45, -41, 10],
-  ];
-  const leafGeo = leafQuad(0.3);
-  for (const [x0, x1, z0, z1, n] of clumps)
-    for (let i = 0; i < Math.round(n * scale); i++) {
-      const x = rnd(x0, x1);
-      const z = rnd(z0, z1);
-      const y0 = sandHeight(x, z) - 0.4;
-      const H = rnd(12, 30) * (1 - Math.abs(x - (x0 + x1) / 2) / (x1 - x0));
-      const ph = rnd(0, 6.28);
-      const lean = rnd(-0.12, 0.12);
-      for (let y = 0.6; y < H; y += 0.75) {
-        const f = y / H;
-        for (let s = 0; s < 2; s++) {
-          const yaw = y * 1.7 + s * Math.PI + rnd(-0.2, 0.2);
-          const len = 1.3 * (1 - f * 0.45) * rnd(0.85, 1.15);
-          stems.push({
-            pos: new T.Vector3(x + lean * y, y0 + y, z),
-            rot: new T.Euler(1.1 - f * 0.5, yaw, 0, 'YXZ'),
-            scale: new T.Vector3(len * 0.42, len, len),
-            plant: [ph, 1.2, y0, f],
-          });
+  // --- stem plants, massed at the back: green Rotala rotundifolia whose tips
+  // blush orange under strong light, and deep-red Rotala 'H'ra' among it.
+  // Leaves come in crossed pairs, spreading low down and gathering into a
+  // crown at the top.
+  const stemBed = (clumps: [number, number, number, number, number][], colors: T.ColorRepresentation[], tall: number) => {
+    const stems: Placement[] = [];
+    for (const [x0, x1, z0, z1, n] of clumps)
+      for (let i = 0; i < Math.round(n * scale); i++) {
+        const x = rnd(x0, x1);
+        const z = rnd(z0, z1);
+        const y0 = sandHeight(x, z) - 0.4;
+        // a bush: taller in the middle of the clump
+        const mid = 1 - Math.abs(x - (x0 + x1) / 2) / (x1 - x0);
+        const H = rnd(0.55, 1) * tall * (0.55 + mid * 0.6);
+        const ph = rnd(0, 6.28);
+        // stems splay out from the clump and bow as they grow
+        const out = (x - (x0 + x1) / 2) / (x1 - x0);
+        const lean = out * 0.5 + rnd(-0.18, 0.18);
+        const leanZ = rnd(-0.12, 0.12);
+        let node = 0;
+        for (let y = 0.8; y < H; y += 0.55 - (y / H) * 0.2, node++) {
+          const f = y / H;
+          const bow = y * (1 + f * 0.8);
+          for (let s = 0; s < 4; s++) {
+            const yaw = node * (Math.PI / 4) + s * (Math.PI / 2) + rnd(-0.25, 0.25);
+            const len = (1.15 - f * 0.45) * rnd(0.8, 1.15);
+            stems.push({
+              pos: new T.Vector3(x + lean * bow, y0 + y, z + leanZ * bow),
+              rot: new T.Euler(1.0 - f * 0.6 + rnd(-0.12, 0.12), yaw, 0, 'YXZ'),
+              scale: new T.Vector3(len * 0.34, len, len),
+              plant: [ph, 1.2, y0, f],
+            });
+          }
         }
+      }
+    // each bed its own geometry: the per-leaf attribute lives on it
+    return instanced(
+      leafQuad(0.3),
+      plantMaterial(sway, caustics, {
+        color: colors,
+        shape: /* glsl */ `
+          { vec2 q = vLeaf * 2.0 - 1.0;
+            if (q.x * q.x + q.y * q.y * 0.9 > 1.0) discard; }`,
+        shade: /* glsl */ `
+          vec3 c = mix(uColors[0], uColors[1], smoothstep(0.0, 0.55, vVar));
+          c = mix(c, mix(uColors[2], uColors[3], vLeaf.y), smoothstep(0.6, 0.95, vVar));
+          // the midrib, and leaves lighter at their edges where they're thin
+          c *= 0.82 + 0.3 * (1.0 - abs(vLeaf.x - 0.5) * 2.0);
+          c *= 1.0 - 0.18 * (1.0 - smoothstep(0.0, 0.05, abs(vLeaf.x - 0.5)));
+          diffuseColor.rgb = c;`,
+        glow: 0.6,
+      }),
+      stems,
+      { cast: true, receive: true },
+    );
+  };
+  group.add(
+    stemBed(
+      [
+        [-27, -9, -44, -37, 56],
+        [10, 26, -44, -36, 60],
+      ],
+      [0x2f6a1e, 0x8fb53a, 0xe0813e, 0xf2b07a],
+      28,
+    ),
+  );
+  // the red is the layout's one warm note: a bush just right of centre and a
+  // smaller echo on the left
+  group.add(
+    stemBed(
+      [
+        [-1, 10, -45, -40, 64],
+        [-31, -25, -37, -33, 22],
+      ],
+      [0x8a3a24, 0xd4502e, 0xff5040, 0xffb098],
+      26,
+    ),
+  );
+
+  // --- Cryptocoryne at the feet of the stones: rosettes of crinkled
+  // bronze-green leaves
+  const cryptLeaf = new T.PlaneGeometry(1, 1, 4, 10);
+  cryptLeaf.translate(0, 0.5, 0);
+  {
+    const p = cryptLeaf.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const y = p.getY(i);
+      // long stalk, then a lance-shaped blade with wavy margins
+      const blade = T.MathUtils.smoothstep(y, 0.3, 0.42);
+      const along = T.MathUtils.clamp((y - 0.3) / 0.7, 0, 1);
+      const w = y < 0.3 ? 0.08 : 0.06 + blade * Math.sin(along * Math.PI) ** 0.8 * 0.94;
+      const x = p.getX(i) * w;
+      p.setXYZ(i, x, y, y * y * 0.35 + Math.abs(x) * Math.sin(y * 42) * 0.12 * blade);
+    }
+    cryptLeaf.computeVertexNormals();
+  }
+  const crypts: Placement[] = [];
+  for (const [cx, cz, n] of [
+    [-11, -19, 3],
+    [-27, -17, 2],
+    [17, -17, 3],
+    [12, -29, 2],
+  ] as const)
+    for (let c = 0; c < Math.round(n * Math.max(scale, 0.7)); c++) {
+      const x = cx + rnd(-2.5, 2.5);
+      const z = cz + rnd(-1.5, 1.5);
+      const y = sandHeight(x, z) - 0.2;
+      const leaves = 9 + Math.floor(Math.random() * 5);
+      for (let i = 0; i < leaves; i++) {
+        const f = i / leaves;
+        const len = rnd(6, 9.5) * (1.1 - f * 0.3);
+        crypts.push({
+          pos: new T.Vector3(x, y, z),
+          rot: new T.Euler(0.35 + f * 0.7 + rnd(-0.1, 0.1), f * Math.PI * 2 * 2.618 + rnd(-0.2, 0.2), 0, 'YXZ'),
+          scale: new T.Vector3(len * 0.3, len, len),
+          plant: [rnd(0, 6.28), 0.5, y, Math.random()],
+        });
       }
     }
   group.add(
     instanced(
-      leafGeo,
+      cryptLeaf,
       plantMaterial(sway, caustics, {
-        color: [0x3f7a26, 0x93b83c, 0xd9774a, 0xe8a07a],
-        shape: /* glsl */ `
-          { vec2 q = vLeaf * 2.0 - 1.0; q.y = vLeaf.y * 2.0 - 1.0;
-            if (q.x * q.x + q.y * q.y * 0.9 > 1.0) discard; }`,
+        color: [0x4a5a22, 0x8a8234, 0x8a4a2a, 0xb0b458],
+        shape: '',
         shade: /* glsl */ `
-          vec3 c = mix(uColors[0], uColors[1], smoothstep(0.0, 0.6, vVar));
-          c = mix(c, mix(uColors[2], uColors[3], vLeaf.y), smoothstep(0.62, 0.95, vVar));
-          c *= 0.85 + 0.25 * (1.0 - abs(vLeaf.x - 0.5) * 2.0);
+          vec3 c = mix(uColors[0], uColors[1], smoothstep(0.2, 1.0, vLeaf.y) * (0.6 + vVar * 0.4));
+          c = mix(c, uColors[2], (1.0 - smoothstep(0.0, 0.45, vLeaf.y)) * 0.6 + step(0.8, vVar) * 0.35);
+          float mid = 1.0 - smoothstep(0.0, 0.05, abs(vLeaf.x - 0.5));
+          c = mix(c, uColors[3], mid * 0.35 * step(0.35, vLeaf.y));
+          c *= 0.9 + 0.12 * sin(vLeaf.y * 40.0 + vLeaf.x * 6.0);
           diffuseColor.rgb = c;`,
-        glow: 0.55,
+        glow: 0.35,
+        roughness: 0.4,
       }),
-      stems,
-      { cast: true, receive: true },
+      crypts,
+      { cast: true, receive: true, low: true },
     ),
   );
 
@@ -421,8 +526,7 @@ export function createPlants(
       plant: [rnd(0, 6.28), 0.05, base, Math.sqrt(f)],
     });
   }
-  group.add(
-    instanced(
+  const carpetMesh = instanced(
       round,
       plantMaterial(sway, caustics, {
         color: [0x1f4a14, 0x5f9f2c, 0x9bd04a],
@@ -436,9 +540,9 @@ export function createPlants(
         roughness: 0.45,
       }),
       carpet,
-      { cast: false, receive: true },
-    ),
-  );
+      { cast: false, receive: true, low: true },
+    );
+  group.add(carpetMesh);
 
   // --- Amazon swords: a rosette of broad leaves at each side
   const swordLeaf = new T.PlaneGeometry(1, 1, 6, 12);
@@ -486,7 +590,7 @@ export function createPlants(
         roughness: 0.35,
       }),
       swords,
-      { cast: true, receive: true },
+      { cast: true, receive: true, low: true },
     ),
   );
 
@@ -507,22 +611,162 @@ export async function loadHardscape(
   const group = new T.Group();
   for (const h of HARDSCAPE) {
     const piece = models.get(h.name)!.clone(true);
+    const ground = sandHeight(h.x, h.z);
     piece.traverse((o) => {
       const m = o as T.Mesh;
       if (!m.isMesh) return;
       const mat = (m.material as T.MeshStandardMaterial).clone();
+      // the bake is a cool grey; under the lamp Seiryu stone reads warmer
+      mat.color.setRGB(1.0, 0.93, 0.84);
       mat.envMap = env;
-      mat.envMapIntensity = 0.5;
+      mat.envMapIntensity = 0.3;
       mat.roughness = 0.82;
-      mat.onBeforeCompile = caustics;
+      mat.onBeforeCompile = (s) => {
+        caustics(s);
+        // where stone meets sand, little light gets in
+        s.uniforms.uFoot = { value: ground };
+        s.fragmentShader = s.fragmentShader
+          .replace('#include <common>', '#include <common>\nuniform float uFoot;')
+          .replace(
+            '#include <color_fragment>',
+            '#include <color_fragment>\n  diffuseColor.rgb *= mix(0.35, 1.0, smoothstep(uFoot - 0.8, uFoot + 3.5, vCausticPos.y));',
+          );
+      };
       m.material = mat;
       m.castShadow = true;
       m.receiveShadow = true;
     });
     piece.scale.setScalar(h.scale);
     piece.rotation.set(...h.rot);
-    piece.position.set(h.x, sandHeight(h.x, h.z) - h.sink, h.z);
+    piece.position.set(h.x, ground - h.sink, h.z);
+    piece.userData.name = h.name;
     group.add(piece);
   }
+  return group;
+}
+
+/**
+ * Driftwood in a planted tank is rarely bare: Java moss grips it in dark
+ * green fuzz and Java fern sprouts from its forks. Both are placed by
+ * sampling the loaded wood, favouring the faces that look up at the lamp.
+ */
+export function dressWood(
+  hardscape: T.Group,
+  sway: Sway,
+  caustics: (s: T.WebGLProgramParametersWithUniforms) => void,
+  scale = 1,
+) {
+  const moss: Placement[] = [];
+  const ferns: Placement[] = [];
+  const p = new T.Vector3();
+  const n = new T.Vector3();
+  const up = new T.Vector3(0, 1, 0);
+  const q = new T.Quaternion();
+  const twist = new T.Quaternion();
+  hardscape.updateMatrixWorld(true);
+  for (const piece of hardscape.children) {
+    if (!String(piece.userData.name).startsWith('wood')) continue;
+    piece.traverse((o) => {
+      const m = o as T.Mesh;
+      if (!m.isMesh) return;
+      const g = m.geometry.clone().applyMatrix4(m.matrixWorld);
+      const nrm = g.attributes.normal;
+      const lit = new Float32Array(nrm.count);
+      const top = new Float32Array(nrm.count);
+      for (let i = 0; i < nrm.count; i++) {
+        const y = Math.max(0, nrm.getY(i));
+        lit[i] = y * y + 0.04;
+        top[i] = y ** 6;
+      }
+      g.setAttribute('lit', new T.BufferAttribute(lit, 1));
+      g.setAttribute('top', new T.BufferAttribute(top, 1));
+      const mesh = new T.Mesh(g);
+      const mossAt = new MeshSurfaceSampler(mesh).setWeightAttribute('lit').build();
+      for (let i = 0; i < Math.round(2600 * scale); i++) {
+        mossAt.sample(p, n);
+        // fronds stand off the wood, leaning towards the light
+        n.lerp(up, 0.45).normalize();
+        q.setFromUnitVectors(up, n).multiply(twist.setFromAxisAngle(up, rnd(0, Math.PI * 2)));
+        const size = rnd(0.45, 0.95);
+        moss.push({
+          pos: p.clone().addScaledVector(n, -0.05),
+          rot: new T.Euler().setFromQuaternion(q),
+          scale: new T.Vector3(size * 0.8, size, size),
+          plant: [rnd(0, 6.28), 0.06, p.y, Math.random()],
+        });
+      }
+      const fernAt = new MeshSurfaceSampler(mesh).setWeightAttribute('top').build();
+      for (let r = 0; r < 3; r++) {
+        fernAt.sample(p, n);
+        const leaves = 6 + Math.floor(Math.random() * 4);
+        for (let i = 0; i < leaves; i++) {
+          const f = i / leaves;
+          const len = rnd(7, 13) * (1.1 - f * 0.25);
+          ferns.push({
+            pos: p.clone(),
+            rot: new T.Euler(0.3 + f * 0.8 + rnd(-0.1, 0.15), f * Math.PI * 2 * 2.618 + rnd(-0.3, 0.3), 0, 'YXZ'),
+            scale: new T.Vector3(len * 0.17, len, len),
+            plant: [rnd(0, 6.28), 0.7, p.y, Math.random()],
+          });
+        }
+      }
+      g.dispose();
+    });
+  }
+
+  const group = new T.Group();
+  group.add(
+    instanced(
+      leafQuad(0.25),
+      plantMaterial(sway, caustics, {
+        color: [0x173110, 0x3a6a1e, 0x7eaa3a],
+        // a feathery frond: a tapering spine with fine side branches
+        shape: /* glsl */ `
+          { float w = (1.0 - vLeaf.y) * 0.95 * (0.45 + 0.55 * abs(sin(vLeaf.y * 21.0)));
+            if (abs(vLeaf.x - 0.5) * 2.0 > w) discard; }`,
+        shade: /* glsl */ `
+          vec3 c = mix(uColors[0], uColors[1], smoothstep(0.0, 0.9, vLeaf.y) * (0.5 + vVar * 0.5));
+          c = mix(c, uColors[2], smoothstep(0.75, 1.0, vLeaf.y) * step(0.55, vVar) * 0.6);
+          diffuseColor.rgb = c;`,
+        glow: 0.3,
+        roughness: 0.7,
+      }),
+      moss,
+      { cast: false, receive: true, low: true },
+    ),
+  );
+
+  // Java fern: long, stiff, glossy lances with a pale midrib
+  const lance = new T.PlaneGeometry(1, 1, 4, 12);
+  lance.translate(0, 0.5, 0);
+  {
+    const a = lance.attributes.position;
+    for (let i = 0; i < a.count; i++) {
+      const y = a.getY(i);
+      const x = a.getX(i) * Math.sin(Math.min(1, y * 1.04) * Math.PI) ** 0.6 * (y < 0.08 ? 0.3 : 1);
+      a.setXYZ(i, x, y, y * y * 0.45 + Math.abs(x) * 0.5);
+    }
+    lance.computeVertexNormals();
+  }
+  group.add(
+    instanced(
+      lance,
+      plantMaterial(sway, caustics, {
+        color: [0x173f14, 0x2f6a22, 0x8fbf5a],
+        shape: '',
+        shade: /* glsl */ `
+          float mid = 1.0 - smoothstep(0.0, 0.05, abs(vLeaf.x - 0.5));
+          float veins = smoothstep(0.9, 1.0, sin((vLeaf.y * 22.0 - abs(vLeaf.x - 0.5) * 12.0) * 3.14159));
+          vec3 c = mix(uColors[0], uColors[1], 0.3 + 0.7 * vLeaf.y * (0.7 + vVar * 0.3));
+          c = mix(c, uColors[2], mid * 0.5);
+          c *= 1.0 - veins * 0.25;
+          diffuseColor.rgb = c;`,
+        glow: 0.35,
+        roughness: 0.3,
+      }),
+      ferns,
+      { cast: true, receive: true },
+    ),
+  );
   return group;
 }

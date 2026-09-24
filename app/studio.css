@@ -224,6 +224,7 @@
   inset: 0;
   pointer-events: none;
   background:
+    linear-gradient(180deg, rgba(3, 14, 16, 0.42) 0%, rgba(3, 14, 16, 0) 16%),
     linear-gradient(0deg, rgba(4, 6, 13, 0.6) 0%, rgba(4, 6, 13, 0) 26%);
 }
 

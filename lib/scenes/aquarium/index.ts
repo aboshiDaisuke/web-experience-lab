@@ -1,18 +1,22 @@
 import * as T from 'three';
 import { loadFish, type SpeciesId } from './fish';
 import { causticInjector, createBubbles, createCaustics, createGodRays, createMotes, createSurface } from './water';
-import { createBackdrop, createPlants, createSand, loadHardscape, sandHeight } from './scape';
+import { LOW, createBackdrop, createPlants, createSand, dressWood, loadHardscape, sandHeight } from './scape';
 import { BOUNDS, Tank } from './school';
+import { createPost } from './post';
 
 /*
  * The hero: a planted tropical aquarium seen through its front glass.
  * Fish are Blender-built meshes (tools/blender/fish.py) swimming by shader;
  * light from the lamp is split by the surface into computed caustics and
- * slanting shafts. Hover near the glass and the fish come to look; tap it
- * and they scatter.
+ * slanting shafts, the underside of the surface mirrors the tank, and the
+ * water tints everything by how far through it you look. The frame is then
+ * photographed (post.ts): focus, bloom, grade. Hover near the glass and the
+ * fish come to look while the lens pulls focus to them; tap and they scatter.
  */
 
 const SURFACE = 46;
+const BACK = -48;
 
 function underwaterEnv(renderer: T.WebGLRenderer) {
   const scene = new T.Scene();
@@ -44,20 +48,23 @@ function underwaterEnv(renderer: T.WebGLRenderer) {
 export async function mountAquarium(el: HTMLElement, base: string) {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const small = matchMedia('(max-width: 760px)').matches;
-  const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.5 : 1.75));
+  // antialiasing happens in the multisampled HDR target the lens works from
+  const renderer = new T.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.5 : 1.6));
   renderer.toneMapping = T.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = T.VSMShadowMap;
 
   const scene = new T.Scene();
-  const fogColor = new T.Color(0x083a40);
-  scene.fog = new T.FogExp2(fogColor, 0.0078);
-  scene.background = fogColor;
+  // the water's colour is worked out per surface (water.ts); this only shows
+  // where the surface's mirror runs out, so it's the water by the waterline
+  scene.background = new T.Color().setRGB(0.1, 0.34, 0.34);
   const env = underwaterEnv(renderer);
+  const post = createPost(renderer, { bloom: 0.2, dof: true, samples: 4 });
 
   const camera = new T.PerspectiveCamera(36, 1, 1, 400);
+  camera.layers.enable(LOW);
   const look = new T.Vector3(0, 22, -20);
 
   // the lamp: one shadowing key light plus the glow of the water itself
@@ -71,17 +78,22 @@ export async function mountAquarium(el: HTMLElement, base: string) {
   sun.shadow.radius = 14;
   sun.shadow.blurSamples = 16;
   sun.shadow.intensity = 0.7;
+  sun.shadow.camera.layers.enable(LOW);
+  // plants sway slowly and fish are small: the shadows can keep half time
+  renderer.shadowMap.autoUpdate = false;
   scene.add(sun, sun.target);
   scene.add(new T.HemisphereLight(0x8fd8d4, 0x241f16, 0.7));
 
   const caustics = createCaustics(renderer, small ? 512 : 768);
-  const causticStrength = { value: 0.85 };
+  const causticStrength = { value: 0.7 };
   const inject = causticInjector(caustics.texture, causticStrength, SURFACE);
 
-  scene.add(createBackdrop());
-  const surface = createSurface(SURFACE, fogColor);
+  scene.add(createBackdrop(SURFACE, BACK));
+  const surface = createSurface(SURFACE, BACK, small ? 0.34 : 0.5);
+  surface.getReflectionCamera(camera).layers.disable(LOW);
   scene.add(surface);
-  scene.add(createSand(inject));
+  // on open sand the net of light is gentler than on leaves and stone
+  scene.add(createSand(causticInjector(caustics.texture, { value: 0.5 }, SURFACE)));
   const sway = { uTime: { value: 0 }, uPush: { value: 0 }, uPushAt: { value: new T.Vector3() }, uSurface: { value: SURFACE } };
   scene.add(createPlants(sway, inject, small ? 0.6 : 1));
 
@@ -89,7 +101,7 @@ export async function mountAquarium(el: HTMLElement, base: string) {
   scene.add(rays);
   const motes = createMotes(small ? 500 : 1100, new T.Box3(new T.Vector3(-60, 2, -44), new T.Vector3(60, SURFACE, 4)));
   scene.add(motes);
-  const bubbles = createBubbles(46, new T.Vector3(47, sandHeight(47, -34) + 0.5, -34), SURFACE, env);
+  const bubbles = createBubbles(46, new T.Vector3(47, sandHeight(47, -34) + 0.5, -34), SURFACE);
   scene.add(bubbles.mesh);
 
   const tank = new Tank();
@@ -104,16 +116,22 @@ export async function mountAquarium(el: HTMLElement, base: string) {
     ...counts.map(([id, n]) => loadFish(base, id, n, env, inject)),
   ]);
   scene.add(hardscape);
+  scene.add(dressWood(hardscape, sway, inject, small ? 0.6 : 1));
   for (const k of kinds) k.meshes.forEach((mesh) => scene.add(mesh));
 
   // what the fish see around them: the tank itself, captured once from its
   // middle, so silver flanks and corneas reflect plants, stone and light
   {
     kinds.forEach((k) => k.meshes.forEach((m) => (m.visible = false)));
+    const low: T.Object3D[] = [];
+    scene.traverse((o) => o.layers.isEnabled(LOW) && !o.layers.isEnabled(0) && low.push(o));
+    low.forEach((o) => o.layers.enable(0));
     caustics.update(0);
+    renderer.shadowMap.needsUpdate = true;
     const pm = new T.PMREMGenerator(renderer);
     const around = pm.fromScene(scene, 0.03, 1, 300, { size: 256, position: new T.Vector3(0, 26, -20) }).texture;
     pm.dispose();
+    low.forEach((o) => o.layers.disable(0));
     kinds.forEach((k) =>
       k.meshes.forEach((m) => {
         m.visible = true;
@@ -121,7 +139,6 @@ export async function mountAquarium(el: HTMLElement, base: string) {
         mat.envMap = around;
       }),
     );
-    bubbles.mesh.material.envMap = around;
   }
   for (const k of kinds) tank.add(k);
   // let the schools find their places before anyone sees them
@@ -131,15 +148,20 @@ export async function mountAquarium(el: HTMLElement, base: string) {
   // camera framing: show about 90 cm of tank on wide screens, less on phones
   const parallax = new T.Vector2();
   const parallaxNow = new T.Vector2();
+  let focusRest = -22;
   const frame = () => {
     const w = Math.max(1, el.clientWidth);
     const h = Math.max(1, el.clientHeight);
     renderer.setSize(w, h, false);
+    post.setSize();
+    const pr = renderer.getPixelRatio() * surface.userData.scale;
+    surface.getRenderTarget().setSize(Math.ceil(w * pr), Math.ceil(h * pr));
     const aspect = w / h;
     // phones: closer to the glass with a taller view, from the surface down to the gravel
     const portrait = aspect < 1;
-    const dist = portrait ? 54 : 84;
-    look.set(portrait ? -12 : 0, portrait ? 21 : 22, -20);
+    const dist = portrait ? 60 : 84;
+    // phones look down the sand path between the stones, into open water
+    look.set(portrait ? 4 : 0, 22, -20);
     camera.userData.height = portrait ? 25 : 23;
     if (portrait) camera.fov = 62;
     else {
@@ -149,6 +171,8 @@ export async function mountAquarium(el: HTMLElement, base: string) {
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     camera.userData.dist = dist;
+    // focus a little in front of the middle of the tank
+    focusRest = look.z - 2;
   };
   // ?aqdebug=<species>[,index] freezes the tank and looks at one fish from the side
   const debug = new URLSearchParams(location.search).get('aqdebug');
@@ -157,6 +181,8 @@ export async function mountAquarium(el: HTMLElement, base: string) {
   const studio = debug?.startsWith('studio')
     ? { yaw: +(debug.split(',')[1] ?? 0), focus: debug.split(',')[2] ?? '' }
     : null;
+  // close-ups sit far inside the lens's focus range
+  if (studio) post.opts.dof = false;
   const STUDIO: Record<string, [number, number, number]> = {
     angel: [-11, 27, -8],
     discus: [12, 27, -8],
@@ -265,9 +291,10 @@ export async function mountAquarium(el: HTMLElement, base: string) {
   io.observe(el);
 
   el.appendChild(renderer.domElement);
-  if (debug) Object.assign(window, { __aq: { renderer, caustics, scene, camera } });
+  if (debug) Object.assign(window, { __aq: { renderer, caustics, scene, camera, post, surface } });
   let knock = 0;
   let time = 0;
+  let frames = 0;
   let prev = performance.now();
   let raf = 0;
   const tick = () => {
@@ -294,7 +321,12 @@ export async function mountAquarium(el: HTMLElement, base: string) {
     place();
     // a knock on the glass jolts the view for a moment
     if (knock > 0.01) camera.position.x += Math.sin(now * 0.09) * knock * 0.25;
-    renderer.render(scene, camera);
+    // the lens pulls focus to the glass when fish come up to a finger
+    const focusZ = tank.pointer ? tank.pointer.z - 4 : focusRest;
+    const want = camera.position.z - focusZ;
+    post.focus.value += (want - post.focus.value) * Math.min(1, dt * 2.5);
+    if (++frames % 2 === 0) renderer.shadowMap.needsUpdate = true;
+    post.render(scene, camera, time);
   };
   tick();
 
@@ -308,6 +340,8 @@ export async function mountAquarium(el: HTMLElement, base: string) {
       el.removeEventListener('pointerup', onUp);
       el.removeEventListener('pointerleave', onLeave);
       caustics.dispose();
+      post.dispose();
+      surface.dispose();
       scene.traverse((o) => {
         const m = o as T.Mesh;
         m.geometry?.dispose();
