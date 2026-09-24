@@ -27,6 +27,10 @@ import ProjectMotion from './project-motion';
 import TourModal from './tour/tour-viewer';
 import { openTour } from '@/lib/tour/bus';
 import LuceSite from './luce-site';
+import DriveSite from './works/drive-site';
+import YaoyaSite from './works/yaoya-site';
+import LibrarySite from './works/library-site';
+import CitySite from './works/city-site';
 import { Slider } from '@/components/ui/slider';
 import {
   Dialog,
@@ -44,6 +48,78 @@ const Img = ({
   alt?: string;
   className?: string;
 }) => <img className={className} src={`${BASE}/images/${name}.jpg`} alt={alt} />;
+// Self-contained works: each component renders its own sections from #top down.
+const localSites: Record<
+  string,
+  {
+    anchors: string[][];
+    mark: React.ReactNode;
+    contact: string;
+    inquiry: string;
+    closing: string;
+  }
+> = {
+  drive: {
+    anchors: [
+      ['在庫車', 'stock'],
+      ['車検・整備', 'service'],
+      ['買取査定', 'buy'],
+    ],
+    mark: (
+      <>
+        MIRAI MOTORS<span>SALES / SERVICE / SINCE 1987</span>
+      </>
+    ),
+    contact: '来店予約',
+    inquiry: 'ご予約・お問い合わせ',
+    closing: '次の出口で、お待ちしています。',
+  },
+  yaoya: {
+    anchors: [
+      ['今日の入荷', 'today'],
+      ['取り置き', 'order'],
+      ['お店のこと', 'story'],
+    ],
+    mark: (
+      <>
+        やおや みらい<span>商店街の八百屋</span>
+      </>
+    ),
+    contact: '取り置きを頼む',
+    inquiry: '取り置きのご依頼',
+    closing: '今日も、店先でお待ちしてます。',
+  },
+  library: {
+    anchors: [
+      ['蔵書をさがす', 'search'],
+      ['開館カレンダー', 'calendar'],
+      ['イベント', 'events'],
+    ],
+    mark: (
+      <>
+        みらい市立図書館<span>MIRAI CITY LIBRARY</span>
+      </>
+    ),
+    contact: 'お問い合わせ',
+    inquiry: '図書館へのお問い合わせ',
+    closing: 'つぎの一冊は、棚の奥に。',
+  },
+  city: {
+    anchors: [
+      ['手続き', 'procedures'],
+      ['くらしの情報', 'life'],
+      ['窓口・アクセス', 'access'],
+    ],
+    mark: (
+      <>
+        未来市役所<span>MIRAI CITY HALL</span>
+      </>
+    ),
+    contact: 'お問い合わせ',
+    inquiry: '市役所へのお問い合わせ',
+    closing: '用事がすむまで、ご案内します。',
+  },
+};
 const tabs = ['信頼感', '高級感', '独創的', '未来的', '遊び心'];
 const themes = ['CORPORATE', 'LUXURY', 'CREATIVE', 'FUTURE', 'PLAYFUL'];
 export default function ProjectExperience({
@@ -61,6 +137,7 @@ export default function ProjectExperience({
   const [filter, setFilter] = useState('すべて');
   const [photo, setPhoto] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [summary, setSummary] = useState<string | undefined>();
   useEffect(
     () =>
       setEmbedded(new URLSearchParams(location.search).get('embed') === '1'),
@@ -87,9 +164,18 @@ export default function ProjectExperience({
   }, []);
   const current = projects.findIndex((x) => x.slug === p.slug);
   const next = projects[(current + 1) % projects.length];
-  const openInquiry = () => setInquiry(true);
-  const anchors =
-    p.slug === 'nova'
+  const openInquiry = () => {
+    setSummary(undefined);
+    setInquiry(true);
+  };
+  const openLocalInquiry = (text?: string) => {
+    setSummary(text);
+    setInquiry(true);
+  };
+  const local = localSites[p.slug];
+  const anchors = local
+    ? local.anchors
+    : p.slug === 'nova'
       ? [
           ['私たちについて', 'story'],
           ['事業紹介', 'details'],
@@ -146,7 +232,9 @@ export default function ProjectExperience({
       )}
       <header className="site-nav">
         <a className="site-wordmark" href="#top">
-          {p.slug === 'nova' ? (
+          {local ? (
+            local.mark
+          ) : p.slug === 'nova' ? (
             <>
               MIRAI NOVA<span>PRECISION ENGINEERING</span>
             </>
@@ -201,7 +289,9 @@ export default function ProjectExperience({
             </a>
           ))}
           <button className="site-contact" onClick={openInquiry}>
-            {p.slug === 'lumina'
+            {local
+              ? local.contact
+              : p.slug === 'lumina'
               ? 'ご予約'
               : p.slug === 'noir'
                 ? 'お席のご予約'
@@ -1128,6 +1218,10 @@ export default function ProjectExperience({
       {p.slug === 'luce' && (
         <LuceSite onInquiry={openInquiry} onTour={(room) => openTour('luce', room)} />
       )}
+      {p.slug === 'drive' && <DriveSite onInquiry={openLocalInquiry} />}
+      {p.slug === 'yaoya' && <YaoyaSite onInquiry={openLocalInquiry} />}
+      {p.slug === 'library' && <LibrarySite onInquiry={openLocalInquiry} />}
+      {p.slug === 'city' && <CitySite onInquiry={openLocalInquiry} />}
       {p.slug === 'offgrid' && (
         <>
           <section id="top" className="offgrid-cover">
@@ -1271,7 +1365,9 @@ export default function ProjectExperience({
         <div>
           <span>LET’S MAKE IT PERSONAL.</span>
           <h2>
-            {p.slug === 'lumina'
+            {local
+              ? local.closing
+              : p.slug === 'lumina'
               ? '次は、あなたの「なりたい」を。'
               : p.slug === 'noir'
                 ? '次のひと皿は、あなたの席で。'
@@ -1309,7 +1405,9 @@ export default function ProjectExperience({
         open={inquiry}
         onClose={() => setInquiry(false)}
         title={
-          p.slug === 'lumina'
+          local
+            ? local.inquiry
+            : p.slug === 'lumina'
             ? 'サロンのご予約'
             : p.slug === 'noir'
               ? 'お席のご予約'
@@ -1320,7 +1418,9 @@ export default function ProjectExperience({
                   : 'お問い合わせ'
         }
         summary={
-          p.slug === 'offgrid'
+          local
+            ? summary
+            : p.slug === 'offgrid'
             ? `${tab === 0 ? '10/17' : '10/18'}・${quantity}名・合計¥${(quantity * 4500).toLocaleString()}。`
             : p.slug === 'noir'
               ? `${tab === 0 ? 'ディナー' : 'ランチ'}のご予約。`

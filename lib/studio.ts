@@ -5,6 +5,7 @@ export const goals = [
   { id: '3d', label: '3Dで製品・空間を見せたい' },
   { id: 'estate', label: '物件を内覧で見せたい' },
   { id: 'photo', label: '写真で魅せたい' },
+  { id: 'local', label: '地域のお店・公共施設' },
 ] as const;
 export type GoalId = (typeof goals)[number]['id'];
 
@@ -55,6 +56,22 @@ export const workMeta: Record<
   offgrid: {
     goals: ['booking', 'photo'],
     built: ['通知の山を風が吹き飛ばす', 'タイムテーブル', 'チケット申込み'],
+  },
+  drive: {
+    goals: ['local', 'booking', '3d'],
+    built: ['スクロールで夜の高速を走る（WebGL）', '標識が出口になるナビ', 'ローン試算と在庫検索'],
+  },
+  yaoya: {
+    goals: ['local', 'booking'],
+    built: ['めくれる布ののれん', '野菜をかごへ放りこむ取り置き', 'チョークで書かれる黒板'],
+  },
+  library: {
+    goals: ['local', 'brand'],
+    built: ['本棚そのものが検索窓', '迫り出して開く本', '開館カレンダー'],
+  },
+  city: {
+    goals: ['local', 'booking'],
+    built: ['番号札で手続きを案内', '窓口までの道順', 'やさしい日本語・文字サイズ切替'],
   },
 };
 

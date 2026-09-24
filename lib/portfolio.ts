@@ -142,5 +142,57 @@ export const projects = [
     tags: ['日程切り替え', 'タイムテーブル', 'チケットデモ'],
     note: '日程を選んで、プログラムとチケット料金を確認できます。',
   },
+  {
+    slug: 'drive',
+    name: 'MIRAI MOTORS',
+    category: '自動車販売・整備',
+    type: 'AUTOMOTIVE',
+    image: 'machine',
+    color: '#1b2733',
+    title: '夜の高速を、\nスクロールで走る。',
+    description:
+      'ページそのものが夜の高速道路。案内標識が在庫車・車検予約・買取査定への出口になる、町の車屋さんのサイト。',
+    tags: ['在庫検索', 'ローン試算', '車検予約'],
+    note: 'スクロールで加速し、標識の出口から各ページへ進めます。',
+  },
+  {
+    slug: 'yaoya',
+    name: 'やおや みらい',
+    category: '個人商店・八百屋',
+    type: 'LOCAL SHOP',
+    image: 'restaurant',
+    color: '#3d6b34',
+    title: 'のれんをくぐって、\n今日の旬を。',
+    description:
+      '商店街の八百屋。のれんをくぐって入店し、店頭の野菜をかごに入れて取り置きを頼める、手ざわりのある個人商店サイト。',
+    tags: ['今日の入荷', '取り置き', '営業日カレンダー'],
+    note: 'のれんをめくって入店し、野菜をかごに入れてみてください。',
+  },
+  {
+    slug: 'library',
+    name: 'みらい市立図書館',
+    category: '図書館・公共施設',
+    type: 'PUBLIC LIBRARY',
+    image: 'studio',
+    color: '#5a3f2a',
+    title: '一冊と出会う、\n本棚の検索。',
+    description:
+      '本棚そのものが検索窓。打ちこむたびに該当する本が棚から迫り出し、開いて予約まで進める市立図書館のサイト。',
+    tags: ['蔵書検索', '開館カレンダー', 'イベント'],
+    note: '検索欄に「猫」「宇宙」「料理」などを入れてみてください。',
+  },
+  {
+    slug: 'city',
+    name: '未来市役所',
+    category: '自治体・役所',
+    type: 'CIVIC DESIGN',
+    image: 'architecture',
+    color: '#1f5a94',
+    title: '番号札をとれば、\n手続きが見える。',
+    description:
+      '用事を選んで番号札をとると、必要な手続きと窓口までの道順が出てくる市役所サイト。文字の大きさや、やさしい日本語にも一瞬で切り替わります。',
+    tags: ['手続きナビ', 'やさしい日本語', '窓口の混雑'],
+    note: '「番号札をとる」から、引っ越しや出産などの用事を選んでください。',
+  },
 ];
 export type Project = (typeof projects)[number];

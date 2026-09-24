@@ -15,7 +15,7 @@ export default function Works() {
       <div className="st-section-head">
         <h2 id="works-title">作品</h2>
         <p>
-          業種も目的も違う11のサイト。どれも予約や3D操作まで、実際に動かして試せます。
+          業種も目的も違う{projects.length}のサイト。どれも予約や3D操作まで、実際に動かして試せます。
         </p>
       </div>
       <div className="st-filter" role="group" aria-label="目的で絞り込む">

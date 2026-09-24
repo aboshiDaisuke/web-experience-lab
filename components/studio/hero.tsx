@@ -44,7 +44,7 @@ export default function Hero() {
         ref={host}
         className={`st-hero-canvas ${grabbing ? 'is-grabbing' : ''}`}
         role="img"
-        aria-label="11作品を印刷した紙の束。いちばん上の紙をつまんで投げると、次の作品が現れます。クリックで作品を開けます。"
+        aria-label={`${projects.length}作品を印刷した紙の束。いちばん上の紙をつまんで投げると、次の作品が現れます。クリックで作品を開けます。`}
       >
         {failed && (
           <div className="st-hero-fallback">
@@ -61,7 +61,7 @@ export default function Hero() {
           伝わるサイトを。
         </h1>
         <p>
-          企業サイトから3Dの製品ページまで。業種ごとに世界観を設計し、思わず操作したくなるWebサイトをつくります。ここに重なる11作品は、すべて実際に動きます。
+          企業サイトから3Dの製品ページまで。業種ごとに世界観を設計し、思わず操作したくなるWebサイトをつくります。ここに重なる{projects.length}作品は、すべて実際に動きます。
         </p>
         <div className="st-hero-actions">
           <a className="st-btn st-btn-light" href="#contact">
