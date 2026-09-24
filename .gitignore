@@ -49,3 +49,4 @@ next-env.d.ts
 /tools/blender/*.blend
 /tools/blender/*.blend1
 .playwright-mcp/
+/tools/blender/logs_*.txt

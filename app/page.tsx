@@ -105,6 +105,7 @@ export default function Home() {
           <p>
             ページ数や機能、<a href="#setup">サーバーやドメインをお持ちかどうか</a>によって変わるため、正式な金額はご相談のあとにお見積りします。いずれも税別で、サーバーなどの月々の利用料は含みません。
           </p>
+          <p className="st-plan-dummy">※ 掲載している金額は仮のダミーです。実際の料金は別途お知らせします。</p>
         </div>
         <div className="st-plan-grid">
           {plans.map((plan) => {
@@ -114,7 +115,10 @@ export default function Home() {
                 <h3>{plan.name}</h3>
                 <p className="st-plan-fit">{plan.fit}</p>
                 <p className="st-plan-price">
-                  {plan.price}
+                  <em>
+                    {plan.price}
+                    <small>ダミー</small>
+                  </em>
                   <span>{plan.period}</span>
                 </p>
                 <ul>

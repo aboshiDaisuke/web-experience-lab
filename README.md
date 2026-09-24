@@ -5,7 +5,7 @@
 作品名は「MIRAI NOVA」「TABLE 未来」「OFF GRID みらい」のように、すべて みらい／MIRAI／未来 のいずれかを含みます（slug・URLは旧名のまま）。
 
 - `components/studio/`: トップの各セクション（hero / works / contact）
-- `lib/scenes/paper-stack.ts`: ヒーローの紙の束（Verletの布シミュレーション＋空気抵抗＋平らに戻ろうとするshape matching、紙ごとの床の高さで積み重ね、つまんだ点からのテザーで伸びを防ぐ）。放置すると角がめくれて誘い、キーボードは「次の作品へ」ボタンで同じ動きになる
+- `lib/scenes/aquarium/`: ヒーローの熱帯魚水槽（WebGL）。魚は `tools/blender/fish.py`、石と流木は `tools/blender/hardscape.py` でBlenderから生成（`tools/blender/aquarium_build.sh` で `public/models/aquarium/` に再出力、Draco圧縮）。泳ぎは頂点シェーダ（体の波・ひれ）、群れはboids、水面の揺れで屈折した光（コースティクス）を計算してランプの光に掛け、影の中では消える。ガラスに近づくと魚が寄り、たたくと散る
 - `lib/studio.ts`: 目的別の分類、制作規模の目安、サービス、料金、流れ、FAQ、**フォームの送信先 `contactEndpoint`**
 - `app/studio.css`: トップと相談ボタンのスタイル
 - `public/images/works/<slug>-desktop.jpg / -mobile.jpg`: 各作品の実画面キャプチャ（作品を変えたら撮り直す。`/works/<slug>?embed=1` を 1440×900 と 390×844@2x で、スクロールバー非表示で撮影）

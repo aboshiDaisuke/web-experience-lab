@@ -203,9 +203,10 @@
   height: 100svh;
   min-height: 640px;
   overflow: hidden;
+  /* until the tank loads (or if WebGL is missing), a quiet underwater gradient */
   background:
-    radial-gradient(60% 70% at 72% 45%, #26306e 0%, transparent 70%),
-    radial-gradient(40% 50% at 10% 100%, #1d2458 0%, transparent 70%), var(--night);
+    radial-gradient(70% 60% at 55% 20%, #1f6f76 0%, transparent 70%),
+    linear-gradient(#0c4a4e, #06201f);
   color: #fff;
 }
 .st-hero-canvas {
@@ -217,32 +218,15 @@
   width: 100% !important;
   height: 100% !important;
 }
-.st-hero-fallback {
-  position: absolute;
-  inset: 18% 4% 18% 44%;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  opacity: 0.7;
-}
-.st-hero-fallback img {
-  aspect-ratio: 16 / 10;
-  height: auto;
-}
 .st-hero::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(0deg, rgba(18, 22, 51, 0.85) 0%, rgba(18, 22, 51, 0) 26%),
-    linear-gradient(
-      90deg,
-      rgba(18, 22, 51, 0.94) 0%,
-      rgba(18, 22, 51, 0.6) 36%,
-      rgba(18, 22, 51, 0) 60%
-    );
+    linear-gradient(0deg, rgba(4, 6, 13, 0.6) 0%, rgba(4, 6, 13, 0) 26%);
 }
+
 .st-hero-copy {
   position: absolute;
   z-index: 2;
@@ -273,61 +257,19 @@
   gap: 12px;
   margin-top: 36px;
 }
-.st-hero-focus {
+.st-hero-hint {
   position: absolute;
   z-index: 2;
   right: var(--gutter);
   bottom: clamp(40px, 7vh, 72px);
-  display: grid;
-  justify-items: end;
-  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.9;
+  letter-spacing: 0.08em;
   text-align: right;
-  text-shadow: 0 1px 16px rgba(18, 22, 51, 0.9);
-}
-.st-hero-focus-count {
-  font-size: 12px;
-  letter-spacing: 0.2em;
-  color: rgba(255, 255, 255, 0.5);
-  font-variant-numeric: tabular-nums;
-}
-.st-hero-focus a {
-  display: grid;
-  justify-items: end;
-  gap: 2px;
-}
-.st-hero-focus-cat {
-  font-size: 13px;
-  color: var(--glow);
-}
-.st-hero-focus b {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: clamp(20px, 2vw, 28px);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-}
-.st-hero-focus a:hover b {
-  color: var(--glow);
-}
-.st-hero-focus-next {
-  margin-top: 6px;
-  padding: 8px 0 0;
-  border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.25);
-  background: none;
-  font: inherit;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-}
-.st-hero-focus-next:hover,
-.st-hero-focus-next:focus-visible {
-  color: #fff;
-}
-.st-hero-canvas.is-grabbing {
-  cursor: grabbing !important;
+  color: rgba(255, 255, 255, 0.72);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
 }
 
 /* shared section head */
@@ -1149,6 +1091,29 @@
 .st-plan:nth-child(3) .st-plan-price {
   border-color: rgba(255, 255, 255, 0.18);
 }
+.st-plan-price em {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-style: normal;
+}
+.st-plan-price small {
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-family: var(--gothic);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.5;
+  opacity: 0.6;
+}
+.st-plan-dummy {
+  grid-column: 2;
+  margin-top: -12px;
+  font-size: 14px !important;
+  font-weight: 700;
+}
 .st-plan-price span {
   margin-top: 10px;
   font-family: var(--gothic);
@@ -1569,6 +1534,10 @@
   .st-contact {
     grid-template-columns: 1fr;
   }
+  .st-plan-dummy {
+    grid-column: auto;
+    margin-top: 0;
+  }
   .st-plan-grid {
     grid-template-columns: 1fr;
   }
@@ -1578,18 +1547,17 @@
   .st-hero::after {
     background: linear-gradient(
       0deg,
-      rgba(18, 22, 51, 0.96) 0%,
-      rgba(18, 22, 51, 0.7) 40%,
-      rgba(18, 22, 51, 0) 64%
+      rgba(4, 12, 14, 0.78) 0%,
+      rgba(4, 12, 14, 0.4) 34%,
+      rgba(4, 12, 14, 0) 52%
     );
   }
   .st-hero-copy {
     right: var(--gutter);
     bottom: 40px;
   }
-  .st-hero-focus {
-    top: 88px;
-    bottom: auto;
+  .st-hero-hint {
+    display: none;
   }
 }
 @media (max-width: 600px) {
@@ -1620,9 +1588,6 @@
   .st-hero-actions .st-btn {
     flex: 1;
     padding: 0 16px;
-  }
-  .st-hero-focus {
-    top: 72px;
   }
   .st-filter {
     flex-wrap: nowrap;
