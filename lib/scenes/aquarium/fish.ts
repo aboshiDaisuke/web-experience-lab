@@ -11,13 +11,15 @@ export function gltfLoader(base: string) {
 
 /*
  * Fish built in Blender (tools/blender/fish.py): one mesh per species with
- * body, fin and eye primitives, drawn as instanced meshes. The swim is done
- * in the vertex shader: a travelling wave down the body whose amplitude grows
- * towards the tail, a bend for turning, and each fin fluttering on its own.
+ * body and fin primitives, drawn as instanced meshes. The eye is painted into
+ * the body's textures, so it moves with the skin and can't stand off it. The
+ * swim is done in the vertex shader: a travelling wave down the body whose
+ * amplitude grows towards the tail, a bend for turning, and each fin
+ * fluttering on its own.
  * Per-instance `aSwim` = (tail phase, tail amplitude, bend, fin phase).
  */
 
-export type SpeciesId = 'neon' | 'rummy' | 'angel' | 'discus';
+export type SpeciesId = 'neon' | 'rummy' | 'angel' | 'discus' | 'gourami';
 
 // the rim colour some species carry on their long fins (rgb, strength)
 const FIN_EDGE: Record<SpeciesId, [number, number, number, number]> = {
@@ -25,6 +27,7 @@ const FIN_EDGE: Record<SpeciesId, [number, number, number, number]> = {
   rummy: [0.8, 0.85, 0.9, 0.0],
   angel: [0.85, 0.88, 0.9, 0.35],
   discus: [0.05, 0.16, 0.42, 0.8],
+  gourami: [0.85, 0.2, 0.1, 0.6],
 };
 
 // paired fins are see-through and lie over the body in the side texture, so
@@ -34,6 +37,7 @@ const PAIRED: Record<SpeciesId, [number, number, number, number][]> = {
   rummy: [[0.9, 0.9, 0.86, 0.1], [0.9, 0.9, 0.86, 0.14]],
   angel: [[0.85, 0.87, 0.88, 0.16], [0.95, 0.93, 0.88, 0.8]],
   discus: [[0.8, 0.5, 0.35, 0.2], [0.75, 0.25, 0.12, 0.7]],
+  gourami: [[0.92, 0.9, 0.85, 0.1], [0.95, 0.5, 0.2, 0.85]],
 };
 
 // wave count along the body, head amplitude share, pectoral amplitude, fin ripple
@@ -42,7 +46,30 @@ const STYLE: Record<SpeciesId, [number, number, number, number]> = {
   rummy: [0.85, 0.12, 0.05, 0.012],
   angel: [0.6, 0.08, 0.05, 0.03],
   discus: [0.55, 0.06, 0.05, 0.014],
+  gourami: [0.65, 0.08, 0.06, 0.02],
 };
+
+// how much of the lamp comes through from the far side: [body, fins]. Tetras
+// are thin and glassy; the big cichlids are deeper and more opaque
+const TRANSLUCENT: Record<SpeciesId, [number, number]> = {
+  neon: [0.16, 0.55],
+  rummy: [0.16, 0.55],
+  angel: [0.07, 0.5],
+  discus: [0.04, 0.4],
+  gourami: [0.1, 0.5],
+};
+
+// relief of the scales: the cichlids' are fine enough to read only as sheen
+const BUMP: Record<SpeciesId, number> = { neon: 0.16, rummy: 0.16, angel: 0.06, discus: 0.08, gourami: 0.1 };
+
+// light that reaches a thin membrane from behind shows through it
+const throughGlsl = /* glsl */ `#include <lights_fragment_end>
+  #if NUM_DIR_LIGHTS > 0
+  {
+    float through = max(0.0, -dot(normal, directionalLights[0].direction));
+    reflectedLight.indirectDiffuse += diffuseColor.rgb * directionalLights[0].color * causticLight * through * uThrough;
+  }
+  #endif`;
 
 const swimVertex = /* glsl */ `
 attribute vec4 aPart;
@@ -149,15 +176,13 @@ export async function loadFish(
   env: T.Texture,
   caustics: (shader: T.WebGLProgramParametersWithUniforms) => void,
 ): Promise<FishKind> {
-  const [gltf, color, mat, eye] = await Promise.all([
+  const [gltf, color, mat] = await Promise.all([
     gltfLoader(base).loadAsync(`${base}/${id}.glb`),
     loadBitmap(`${base}/${id}_color.webp`),
     loadBitmap(`${base}/${id}_mat.webp`),
-    loadBitmap(`${base}/${id}_eye.webp`),
   ]);
   color.colorSpace = T.SRGBColorSpace;
-  eye.colorSpace = T.SRGBColorSpace;
-  for (const t of [color, mat, eye]) {
+  for (const t of [color, mat]) {
     t.anisotropy = 4;
     t.minFilter = T.LinearMipmapLinearFilter;
     t.generateMipmaps = true;
@@ -175,7 +200,7 @@ export async function loadFish(
     roughnessMap: mat,
     metalnessMap: mat,
     bumpMap: mat,
-    bumpScale: 0.16,
+    bumpScale: BUMP[id],
     roughness: 1,
     metalness: 1,
     clearcoat: 0.7,
@@ -190,14 +215,26 @@ export async function loadFish(
   body.onBeforeCompile = (shader) => {
     patchSwim(shader, uniforms);
     caustics(shader);
-    // light scattered inside the thin body keeps the shadowed side from going dead
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <emissivemap_fragment>',
-      /* glsl */ `#include <emissivemap_fragment>
-      totalEmissiveRadiance += diffuseColor.rgb * vec3(0.06, 0.085, 0.08);
-      // structural colour (the neon stripe, discus lines) throws the lamp back hard
-      totalEmissiveRadiance += diffuseColor.rgb * texture2D(iridescenceMap, vIridescenceMapUv).a * 0.9;`,
-    );
+    shader.uniforms.uThrough = { value: TRANSLUCENT[id][0] };
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uThrough;')
+      .replace(
+        '#include <emissivemap_fragment>',
+        /* glsl */ `#include <emissivemap_fragment>
+        {
+          float structural = texture2D(iridescenceMap, vIridescenceMapUv).a;
+          // structural colour is interference, so it turns with the angle it's
+          // seen at: deep violet-blue face on, running to green towards the edge
+          float facing = abs(dot(normal, normalize(vViewPosition)));
+          vec3 shift = mix(vec3(0.55, 1.25, 0.85), vec3(1.1, 0.8, 1.15), smoothstep(0.25, 0.95, facing));
+          diffuseColor.rgb *= mix(vec3(1.0), shift, structural);
+          // light scattered inside the thin body keeps the shadowed side from going dead
+          totalEmissiveRadiance += diffuseColor.rgb * vec3(0.06, 0.085, 0.08);
+          // structural colour (the neon stripe, discus lines) throws the lamp back hard
+          totalEmissiveRadiance += diffuseColor.rgb * structural * 0.9;
+        }`,
+      )
+      .replace('#include <lights_fragment_end>', throughGlsl);
     shader.fragmentShader = shader.fragmentShader.replace(
       'texture2D( iridescenceMap, vIridescenceMapUv ).r',
       'texture2D( iridescenceMap, vIridescenceMapUv ).a',
@@ -220,9 +257,11 @@ export async function loadFish(
     shader.uniforms.uFinEdge = { value: new T.Vector4(...FIN_EDGE[id]) };
     shader.uniforms.uPect = { value: new T.Vector4(...PAIRED[id][0]) };
     shader.uniforms.uPelv = { value: new T.Vector4(...PAIRED[id][1]) };
+    shader.uniforms.uThrough = { value: TRANSLUCENT[id][1] };
     caustics(shader);
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vFin;\nvarying float vPart;\nuniform vec4 uFinEdge;\nuniform vec4 uPect;\nuniform vec4 uPelv;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vFin;\nvarying float vPart;\nuniform vec4 uFinEdge;\nuniform vec4 uPect;\nuniform vec4 uPelv;\nuniform float uThrough;')
+      .replace('#include <lights_fragment_end>', throughGlsl)
       .replace(
         '#include <map_fragment>',
         /* glsl */ `#include <map_fragment>
@@ -243,41 +282,6 @@ export async function loadFish(
       );
   };
 
-  const eyeMat = new T.MeshPhysicalMaterial({
-    map: eye,
-    roughness: 0.32,
-    metalness: 0.45,
-    envMap: env,
-  });
-  eye.channel = 1;
-  eyeMat.onBeforeCompile = (shader) => {
-    patchSwim(shader, uniforms);
-    caustics(shader);
-  };
-
-  // the clear cornea over the iris: nearly invisible, except for what it reflects
-  // black and additive: it contributes only its own reflections and highlight
-  const cornea = new T.MeshPhysicalMaterial({
-    color: 0x000000,
-    // any smoother and the lamp's highlight overflows the HDR buffer
-    roughness: 0.1,
-    metalness: 0,
-    ior: 1.38,
-    transparent: true,
-    blending: T.AdditiveBlending,
-    depthWrite: false,
-    envMap: env,
-    envMapIntensity: 1.6,
-  });
-  cornea.onBeforeCompile = (shader) => {
-    patchSwim(shader, uniforms);
-    // seen edge-on the cornea would light up as a ring floating off the head
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <opaque_fragment>',
-      'outgoingLight *= smoothstep(0.2, 0.55, abs(dot(normalize(normal), normalize(vViewPosition))));\n#include <opaque_fragment>',
-    );
-  };
-
   const depth = new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking });
   depth.onBeforeCompile = (shader) => patchSwim(shader, uniforms);
 
@@ -291,14 +295,22 @@ export async function loadFish(
     g.deleteAttribute('color');
     g.setAttribute('aSwim', swim);
     const name = (m.material as T.Material).name;
-    const material = { body, eye: eyeMat, cornea }[name] ?? fin;
+    const material = name === 'body' ? body : fin;
     const inst = new T.InstancedMesh(g, material, count);
     inst.instanceMatrix.setUsage(T.DynamicDrawUsage);
     inst.frustumCulled = false;
-    inst.castShadow = name === 'body' || name === 'fin';
+    inst.castShadow = true;
     inst.receiveShadow = name === 'body';
     inst.customDepthMaterial = depth;
     meshes.push(inst);
   });
+  // no two fish of a kind are quite the same shade
+  const tint = new T.Color();
+  for (let i = 0; i < count; i++) {
+    const v = 0.9 + Math.random() * 0.18;
+    const warm = (Math.random() - 0.5) * 0.08;
+    tint.setRGB(v * (1 + warm), v, v * (1 - warm));
+    for (const inst of meshes) if (inst.material === body || inst.material === fin) inst.setColorAt(i, tint);
+  }
   return { id, meshes, swim, count, uniforms };
 }

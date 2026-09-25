@@ -12,8 +12,8 @@ const OBSTACLES = HARDSCAPE.map((h) => ({
 
 /*
  * Behaviour. Tetras school (separation, alignment, cohesion around a slowly
- * wandering goal); angelfish and discus cruise alone and pause to hover on
- * their pectoral fins. A finger near the glass draws them in; a tap on the
+ * wandering goal); the gouramis cruise alone and pause to hover on their
+ * pectoral fins. A finger near the glass draws them in; a tap on the
  * glass startles everything nearby, and the schools regroup afterwards.
  */
 
@@ -27,13 +27,19 @@ type Profile = {
   tailAmp: number;
   pectHz: number;
   turn: number;
+  // steepest the body tilts nose up or down (rad); fish rise and sink on their fins
+  pitch: number;
+  // burst-and-coast: seconds per stroke cycle and the share of it spent beating
+  stroke: [number, number];
+  beating: number;
 };
 
 export const PROFILES: Record<SpeciesId, Profile> = {
-  neon: { size: 3.8, cruise: 5.5, burst: 34, school: true, band: [12, 34], tailHz: 3.2, tailAmp: 0.05, pectHz: 5, turn: 2.6 },
-  rummy: { size: 4.4, cruise: 7, burst: 38, school: true, band: [10, 30], tailHz: 3.0, tailAmp: 0.05, pectHz: 5, turn: 2.4 },
-  angel: { size: 12, cruise: 3.2, burst: 22, school: false, band: [20, 40], tailHz: 1.0, tailAmp: 0.045, pectHz: 2.6, turn: 0.9 },
-  discus: { size: 13, cruise: 2.6, burst: 20, school: false, band: [15, 36], tailHz: 0.9, tailAmp: 0.035, pectHz: 3.2, turn: 0.8 },
+  neon: { size: 3.8, cruise: 5.5, burst: 34, school: true, band: [12, 34], tailHz: 3.2, tailAmp: 0.05, pectHz: 5, turn: 2.6, pitch: 0.3, stroke: [1.1, 2.2], beating: 0.55 },
+  rummy: { size: 4.4, cruise: 7, burst: 38, school: true, band: [10, 30], tailHz: 3.0, tailAmp: 0.05, pectHz: 5, turn: 2.4, pitch: 0.3, stroke: [1.2, 2.4], beating: 0.6 },
+  angel: { size: 12, cruise: 3.2, burst: 22, school: false, band: [20, 40], tailHz: 1.0, tailAmp: 0.045, pectHz: 2.6, turn: 0.9, pitch: 0.2, stroke: [3, 6], beating: 0.5 },
+  discus: { size: 13, cruise: 2.6, burst: 20, school: false, band: [15, 36], tailHz: 0.9, tailAmp: 0.035, pectHz: 3.2, turn: 0.8, pitch: 0.18, stroke: [3.5, 7], beating: 0.45 },
+  gourami: { size: 8, cruise: 3.4, burst: 26, school: false, band: [16, 38], tailHz: 1.4, tailAmp: 0.045, pectHz: 3.4, turn: 1.1, pitch: 0.2, stroke: [2.5, 5.5], beating: 0.5 },
 };
 
 type Fish = {
@@ -45,6 +51,10 @@ type Fish = {
   pect: number;
   bank: number;
   bend: number;
+  // 1 while the tail beats, easing to 0 while the fish coasts
+  beat: number;
+  stroke: number;
+  period: number;
   goal: T.Vector3;
   hover: number;
   fear: number;
@@ -93,6 +103,9 @@ export class Tank {
         pect: Math.random() * 10,
         bank: 0,
         bend: 0,
+        beat: 1,
+        stroke: Math.random(),
+        period: pr.stroke[0] + Math.random() * (pr.stroke[1] - pr.stroke[0]),
         goal: randomGoal(pr),
         hover: 0,
         fear: 0,
@@ -211,6 +224,12 @@ export class Tank {
         acc.z += soft(f.p.z, BOUNDS.z0, BOUNDS.z1, 5) * 2.2;
         // fish keep level: damp vertical speed
         acc.y -= f.v.y * 0.6;
+        // burst and coast: a few strokes of the tail, then a glide. A scared
+        // fish, or one falling behind, keeps beating
+        f.stroke += dt / f.period;
+        const beating = (f.stroke % 1) < pr.beating || f.fear > 0.2 || f.v.length() < pr.cruise * 0.6 ? 1 : 0;
+        f.beat += (beating - f.beat) * Math.min(1, dt * (beating ? 8 : 3));
+        acc.addScaledVector(f.fwd, (f.beat - pr.beating) * pr.cruise * 0.5);
 
         f.v.addScaledVector(acc, dt);
         const speed = f.v.length();
@@ -223,8 +242,18 @@ export class Tank {
         // turn the body towards the velocity at a fish's turning rate
         const prev = tmp.copy(f.fwd);
         const want = tmp2.copy(f.v);
-        want.y *= 0.5;
-        want.normalize();
+        // heading from the horizontal part of the motion; with little of it
+        // (rising or sinking in place) the fish keeps facing where it faced
+        let hx = want.x;
+        let hz = want.z;
+        const hl = Math.hypot(hx, hz);
+        if (hl < pr.cruise * 0.15) {
+          const k = hl / (pr.cruise * 0.15);
+          hx = hx * k + f.fwd.x * (1 - k) * pr.cruise * 0.15;
+          hz = hz * k + f.fwd.z * (1 - k) * pr.cruise * 0.15;
+        }
+        const lim = Math.hypot(hx, hz) * Math.tan(pr.pitch);
+        want.set(hx, T.MathUtils.clamp(want.y * 0.5, -lim, lim), hz).normalize();
         const rate = pr.turn * (1 + f.fear * 3) * dt;
         f.fwd.lerp(want, Math.min(1, rate)).normalize();
         const yawRate = (prev.x * f.fwd.z - prev.z * f.fwd.x) / Math.max(dt, 1e-3);
@@ -232,7 +261,7 @@ export class Tank {
         f.bank += (T.MathUtils.clamp(yawRate * 0.35, -0.6, 0.6) - f.bank) * Math.min(1, dt * 3);
 
         const effort = T.MathUtils.clamp(f.v.length() / pr.cruise, 0, 4);
-        f.tail += dt * Math.PI * 2 * pr.tailHz * (0.35 + effort * 0.75);
+        f.tail += dt * Math.PI * 2 * pr.tailHz * (0.35 + effort * 0.75) * (0.3 + 0.7 * f.beat);
         f.pect += dt * Math.PI * 2 * pr.pectHz * (pr.school ? 1 : 1.4 - Math.min(1, effort) * 0.5);
       }
     }
@@ -253,7 +282,8 @@ export class Tank {
         for (const mesh of kind.meshes) (mesh.instanceMatrix.array as Float32Array).set(m.elements, i * 16);
         const effort = T.MathUtils.clamp(f.v.length() / pr.cruise, 0, 4);
         swim[i * 4] = f.tail;
-        swim[i * 4 + 1] = pr.tailAmp * (0.5 + Math.min(effort, 2.5) * 0.6);
+        // coasting, the body straightens and the tail only trails
+        swim[i * 4 + 1] = pr.tailAmp * (0.5 + Math.min(effort, 2.5) * 0.6) * (0.2 + 0.8 * f.beat);
         swim[i * 4 + 2] = f.bend;
         swim[i * 4 + 3] = f.pect;
       }

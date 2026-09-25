@@ -1,7 +1,7 @@
 import * as T from 'three';
 import { loadFish, type SpeciesId } from './fish';
 import { causticInjector, createBubbles, createCaustics, createGodRays, createMotes, createSurface } from './water';
-import { LOW, createBackdrop, createPlants, createSand, dressWood, loadHardscape, sandHeight } from './scape';
+import { LOW, createBackdrop, createGravel, createPlants, createSand, dressWood, loadHardscape, sandHeight } from './scape';
 import { BOUNDS, Tank } from './school';
 import { createPost } from './post';
 
@@ -94,6 +94,7 @@ export async function mountAquarium(el: HTMLElement, base: string) {
   scene.add(surface);
   // on open sand the net of light is gentler than on leaves and stone
   scene.add(createSand(causticInjector(caustics.texture, { value: 0.5 }, SURFACE)));
+  scene.add(createGravel(causticInjector(caustics.texture, { value: 0.5 }, SURFACE), small ? 0.6 : 1));
   const sway = { uTime: { value: 0 }, uPush: { value: 0 }, uPushAt: { value: new T.Vector3() }, uSurface: { value: SURFACE } };
   scene.add(createPlants(sway, inject, small ? 0.6 : 1));
 
@@ -108,8 +109,7 @@ export async function mountAquarium(el: HTMLElement, base: string) {
   const counts: [SpeciesId, number][] = [
     ['neon', small ? 28 : 44],
     ['rummy', small ? 14 : 22],
-    ['angel', 3],
-    ['discus', small ? 2 : 3],
+    ['gourami', small ? 4 : 6],
   ];
   const [hardscape, ...kinds] = await Promise.all([
     loadHardscape(base, env, inject),
@@ -186,6 +186,7 @@ export async function mountAquarium(el: HTMLElement, base: string) {
   const STUDIO: Record<string, [number, number, number]> = {
     angel: [-11, 27, -8],
     discus: [12, 27, -8],
+    gourami: [0, 27, -8],
     neon: [-7, 12, -4],
     rummy: [9, 12, -4],
   };

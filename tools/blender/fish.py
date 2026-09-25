@@ -7,10 +7,12 @@ a base line on the body and an outline. Everything shares one side-view
 texture per species, painted here with numpy:
   <sp>_color.npy  RGBA  colour, alpha = fin opacity
   <sp>_mat.npy    RGBA  R height (scales, gill cover), G roughness, B metalness, A iridescence
-  <sp>_eye.npy    RGBA  iris
+The eye is painted into the skin (iris, pupil, a dome in the relief and a
+glossy finish), not built as a part of its own: a separate eyeball stands off
+the head, and from some angles reads as popping out or floating free of it.
 Vertex colours carry what the swim shader needs:
   R  flex (0 at the body, 1 at a fin's edge)
-  G  part: 0 body, .25 dorsal/anal, .5 caudal, .75 pectoral, 1 pelvic, .1 eye
+  G  part: 0 body, .25 dorsal/anal, .5 caudal, .75 pectoral, 1 pelvic
   B  side of a paired fin (0 / 1), .5 on the midplane
 UV0 is the side projection, UV1 is (ray coordinate, base->edge) on fins.
 """
@@ -57,7 +59,7 @@ SPECIES = {
         bot=[(0, 0), (.03, .024), (.08, .048), (.15, .072), (.3, .098), (.45, .108), (.56, .1), (.7, .074), (.85, .054), (1, .046)],
         wid=[(0, 0), (.04, .03), (.12, .048), (.3, .054), (.5, .048), (.75, .03), (.92, .016), (1, .014)],
         mid=[(0, .006), (.3, 0), (1, 0)],
-        eye=dict(s=.14, y=.024, r=.039),
+        eye=dict(s=.14, y=.019, r=.036),
         scale=.03,
         fins=[
             dict(kind='dorsal', base=(.47, .58), edge=[(.47, 0), (.48, .07), (.5, .135), (.53, .15), (.57, .09), (.6, .03), (.6, 0)], rays=9),
@@ -73,7 +75,7 @@ SPECIES = {
         bot=[(0, 0), (.03, .022), (.08, .045), (.15, .066), (.3, .088), (.45, .096), (.56, .09), (.7, .068), (.85, .05), (1, .043)],
         wid=[(0, 0), (.04, .028), (.12, .046), (.3, .052), (.5, .046), (.75, .029), (.92, .015), (1, .013)],
         mid=[(0, .004), (.3, 0), (1, 0)],
-        eye=dict(s=.135, y=.022, r=.037),
+        eye=dict(s=.135, y=.018, r=.034),
         scale=.03,
         fins=[
             dict(kind='dorsal', base=(.46, .57), edge=[(.46, 0), (.47, .07), (.49, .13), (.52, .145), (.56, .085), (.59, .025), (.59, 0)], rays=9),
@@ -114,6 +116,24 @@ SPECIES = {
             dict(kind='pelvic', s=.3, y=-.3, axis=(1, .1), dir=(-.6, -1, .3), len=.1, width=.03, rays=5),
         ],
     ),
+    # a male dwarf gourami: a deep oval with a short, blunt head, the dorsal
+    # and a very long anal fin swept back past the tail, and pelvic fins drawn
+    # out into long feelers
+    'gourami': dict(
+        top=[(0, 0), (.03, .045), (.08, .1), (.15, .165), (.25, .215), (.35, .235), (.45, .235), (.58, .215), (.7, .175), (.82, .13), (.92, .1), (1, .09)],
+        bot=[(0, 0), (.03, .035), (.08, .085), (.15, .15), (.25, .205), (.35, .225), (.45, .22), (.58, .2), (.7, .16), (.82, .12), (.92, .095), (1, .085)],
+        wid=[(0, 0), (.05, .035), (.15, .068), (.35, .082), (.6, .068), (.85, .04), (1, .022)],
+        mid=[(0, .035), (.12, .02), (.35, 0), (1, 0)],
+        eye=dict(s=.13, y=.035, r=.042),
+        scale=.016,
+        fins=[
+            dict(kind='dorsal', base=(.42, .96), edge=[(.42, 0), (.46, .05), (.55, .07), (.65, .085), (.75, .1), (.85, .13), (.94, .17), (1.04, .15), (1.02, .06), (.98, 0)], rays=22),
+            dict(kind='anal', base=(.26, .97), edge=[(.26, 0), (.3, .06), (.4, .085), (.55, .1), (.7, .12), (.82, .15), (.93, .18), (1.04, .16), (1.02, .06), (.98, 0)], rays=30),
+            dict(kind='caudal', edge=[(0, .088), (.08, .13), (.17, .155), (.25, .15), (.3, .1), (.315, .03), (.315, -.03), (.3, -.1), (.25, -.145), (.17, -.15), (.08, -.125), (0, -.082)], rays=17),
+            dict(kind='pectoral', s=.27, y=-.04, axis=(.2, 1), dir=(-1, -.2, .55), len=.12, width=.05, rays=10),
+            dict(kind='pelvic', s=.22, y=-.13, axis=(1, .1), dir=(-.25, -1, .35), len=.5, width=.018, rays=3, thread=True),
+        ],
+    ),
 }
 
 
@@ -127,8 +147,8 @@ class Body:
     def mid(self, s): return pchip(self.sp['mid'], s)
 
 
-OPER = {'neon': .1, 'rummy': .1, 'angel': .13, 'discus': .15}
-MOUTH = {'neon': .6, 'rummy': .58, 'angel': .62, 'discus': .6}
+OPER = {'neon': .1, 'rummy': .1, 'angel': .13, 'discus': .15, 'gourami': .13}
+MOUTH = {'neon': .6, 'rummy': .58, 'angel': .62, 'discus': .6, 'gourami': .68}
 
 
 def section(b, sp, name, s, ph):
@@ -157,10 +177,6 @@ def section(b, sp, name, s, ph):
     ex = e['s']
     d = math.hypot(s - ex, (y - c - e['y'] * 0.5) * 0.75)
     ww *= 1 + 0.07 * smooth(OPER[name] + 0.004, OPER[name] - 0.012, d)
-    # the orbit: skin rises round the eye so the eye sits in the head, not on it
-    de = math.hypot(s - ex, y - (c + e['y'])) / e['r']
-    side_w = abs(cs)
-    ww += e['r'] * 0.42 * math.exp(-(de / 1.25) ** 2) * side_w ** 0.5 if abs(cs) > 1e-6 else 0.0
     # the mouth: a cleft across the snout, lips either side
     m = MOUTH[name]
     snout = float(smooth(0.1, 0.0, s))
@@ -197,68 +213,17 @@ def loft(b, sp, name, S=96, N=64):
     return verts, faces, uvs1
 
 
-def eye_parts(b, sp, name, side):
-    """An eye as it's built: a flat iris set just under the skin line, and a
-    clear cornea bulging over it. Nothing reaches into the head, so the far
-    eye never shows through."""
-    e = sp['eye']
-    es, r = e['s'], e['r']
-    # find the flank at the eye's height by walking the ring
-    best, lat = 9, 0.0
-    for k in range(720):
-        ph = math.pi * (k / 720 - 0.5)
-        l, y, _ = section(b, sp, name, es, ph)
-        dd = abs(y - (b.mid(es) + e['y']))
-        if dd < best:
-            best, lat = dd, l
-    n = np.array([0.2, side * 1.0, 0.08])
-    n /= np.linalg.norm(n)
-    t1 = np.cross([0, 0, 1], n)
-    t1 /= np.linalg.norm(t1)
-    t2 = np.cross(n, t1)
-    P = np.array([0.5 - es, side * lat, b.mid(es) + e['y']])
-    # iris: a disc slightly sunk below the surface
-    C = P - n * r * 0.04
-    iv, iuv, ifs = [tuple(C + n * r * 0.16)], [(0.5, 0.5)], []
-    R, A = 6, 32
-    for ri in range(1, R + 1):
-        for a in range(A):
-            ang = 2 * math.pi * a / A
-            f = ri / R
-            q = C + (t1 * math.cos(ang) + t2 * math.sin(ang)) * r * f + n * r * 0.16 * (1 - f * f)
-            iv.append(tuple(q))
-            iuv.append((0.5 + math.cos(ang) * ri / R * 0.5, 0.5 + math.sin(ang) * ri / R * 0.5))
-    for a in range(A):
-        ifs.append((0, 1 + a, 1 + (a + 1) % A))
-    for ri in range(1, R):
-        for a in range(A):
-            o0, o1 = 1 + (ri - 1) * A, 1 + ri * A
-            quad = (o0 + a, o1 + a, o1 + (a + 1) % A, o0 + (a + 1) % A)
-            ifs.append(quad)
-    # cornea: a spherical cap, base at the skin, rising ~0.3 r
-    cap = math.radians(40)
-    Rc = r * 1.02 / math.sin(cap)
-    B = P - n * r * 0.04
-    O = B - n * Rc * math.cos(cap)
-    cv, cuv, cfs = [], [], []
-    rows = 8
-    cv.append(tuple(O + n * Rc))
-    cuv.append((0.5, 0.5))
-    for ri in range(1, rows + 1):
-        al = cap * ri / rows
-        for a in range(A):
-            ang = 2 * math.pi * a / A
-            q = O + Rc * (n * math.cos(al) + (t1 * math.cos(ang) + t2 * math.sin(ang)) * math.sin(al))
-            cv.append(tuple(q))
-            cuv.append((0.5 + math.cos(ang) * ri / rows * 0.5, 0.5 + math.sin(ang) * ri / rows * 0.5))
-    for a in range(A):
-        cfs.append((0, 1 + a, 1 + (a + 1) % A))
-    for ri in range(1, rows):
-        for a in range(A):
-            o0, o1 = 1 + (ri - 1) * A, 1 + ri * A
-            quad = (o0 + a, o1 + a, o1 + (a + 1) % A, o0 + (a + 1) % A)
-            cfs.append(quad)
-    return (iv, ifs, iuv), (cv, cfs, cuv)
+def flank(b, sp, name, s, y):
+    """Lateral half-width of the skin at (s, height y): the ring angle whose
+    height is y, found by bisection (height rises monotonically with it)."""
+    lo, hi = -math.pi / 2, math.pi / 2
+    for _ in range(40):
+        ph = (lo + hi) / 2
+        if section(b, sp, name, s, ph)[1] < y:
+            lo = ph
+        else:
+            hi = ph
+    return section(b, sp, name, s, (lo + hi) / 2)[0]
 
 
 def resample(poly, n):
@@ -315,9 +280,10 @@ def midplane_fin(b, f):
     return fin_grid(base, edge, n, 14 if f['rays'] else 5, f['rays'], pleat=0.003 if f['rays'] else 0.0)
 
 
-def paired_fin(b, f, side):
+def paired_fin(b, sp, name, f, side):
     s, y = f['s'], f['y']
-    w = b.wid(s) * 0.92
+    # rooted a hair inside the skin at that height, so a fin never stands off the body
+    w = flank(b, sp, name, s, b.mid(s) + y) * 0.96
     o = np.array([0.5 - s, side * w, b.mid(s) + y])
     ax = np.array([f['axis'][0], 0, f['axis'][1]], float)
     ax /= np.linalg.norm(ax)
@@ -359,24 +325,19 @@ def build(name, sp):
         if f['kind'] in ('pectoral', 'pelvic'):
             code = .75 if f['kind'] == 'pectoral' else 1.0
             for side in (-1, 1):
-                vs, fs, uv1, flex = paired_fin(b, f, side)
+                vs, fs, uv1, flex = paired_fin(b, sp, name, f, side)
                 add(vs, fs, uv1, [(fl, code, (side + 1) / 2) for fl in flex], 1)
         else:
             code = .5 if f['kind'] == 'caudal' else .25
             vs, fs, uv1, flex = midplane_fin(b, f)
             add(vs, fs, uv1, [(fl, code, .5) for fl in flex], 1)
 
-    for side in (-1, 1):
-        (iv, ifs, iuv), (cv, cfs, cuv) = eye_parts(b, sp, name, side)
-        add(iv, ifs, iuv, [(0, .1, (side + 1) / 2)] * len(iv), 2)
-        add(cv, cfs, cuv, [(0, .1, (side + 1) / 2)] * len(cv), 3)
-
     xs = np.array(V)
     bbox = [float(xs[:, 0].min()), float(xs[:, 0].max()), float(xs[:, 2].min()), float(xs[:, 2].max())]
     me = bpy.data.meshes.new(name)
     me.from_pydata(V, [], F)
     me.validate()
-    for mname in ('body', 'fin', 'eye', 'cornea'):
+    for mname in ('body', 'fin'):
         m = bpy.data.materials.get(mname) or bpy.data.materials.new(mname)
         me.materials.append(m)
     me.polygons.foreach_set('material_index', MAT)
@@ -464,6 +425,7 @@ IRIS = {
     'rummy': ([.9, .7, .45], [.72, .5, .45], [.85, .12, .1]),
     'angel': ([.9, .7, .4], [.72, .2, .12], [.78, .16, .08]),
     'discus': ([.95, .6, .25], [.78, .16, .06], [.85, .12, .05]),
+    'gourami': ([.95, .72, .32], [.72, .3, .12], [.82, .36, .14]),
 }
 
 
@@ -543,7 +505,8 @@ def paint(name, sp, b, bbox, res):
             ss = s - Y * slant + 0.015 * (fbm(X, Y, 30, 23) - 0.5)
             return smooth(w / 2 + soft, w / 2 - soft, np.abs(ss - s0))
         bars = np.maximum.reduce([
-            bar(.15, .045, -0.05),
+            # the first bar runs straight through the eye, as the eye's width
+            bar(sp['eye']['s'] - (b.mid(sp['eye']['s']) + sp['eye']['y']) * 0.05, sp['eye']['r'] * 1.15, -0.05, 0.008),
             bar(.47, .085, 0.1) * (1 - 0.15 * n2),
             bar(.86, .07, 0.28),
             bar(.66, .03, 0.18) * 0.35,
@@ -562,13 +525,22 @@ def paint(name, sp, b, bbox, res):
         warp = fb(X, Y, 3, 3, 31) - 0.5
         wob = np.sin(X * (26 + 10 * fb(X, Y, 2, 2, 36)) + Y * 6 + 6 * fb(X, Y, 2, 3, 37)) * 0.16
         v = Y * 15.0 + wob + 2.4 * (fb(X, Y, 3, 7, 32) - 0.5) + warp * 0.9
+        # the stripes run on over the face and past the eye. Nothing is ringed
+        # round the eye: the paint is laid on from the side, so on the forehead
+        # and throat, which turn away, it stretches, and rings there close into
+        # circles that read, from ahead or behind, as more eyes or an empty
+        # socket beside the real one
+        e = sp['eye']
+        ed = np.hypot(X - (0.5 - e['s']), (Y - c - e['y']) * 0.9)
         head = smooth(.26, .1, s)
-        vh = np.hypot(X - (0.5 - sp['eye']['s']), (Y - c - sp['eye']['y']) * 0.9) * 16 + 2.0 * (fb(X, Y, 6, 6, 33) - 0.5)
-        v = v * (1 - head) + vh * head
         line = np.abs(np.mod(v, 1.0) - 0.5) * 2
         thick = 0.28 + 0.1 * fb(X, Y, 7, 7, 34)
         lines = smooth(thick + 0.07, thick - 0.04, line)
         lines *= smooth(0.02, 0.07, s)
+        # the stripes stop just short of the eye, under its rim, so no painted
+        # ring or bare patch beside it can look like the socket once the eye is
+        # seen edge-on
+        lines *= smooth(e['r'] * 0.95, e['r'] * 1.15, ed)
         base = mix(C(.68, .26, .09), C(.55, .18, .07), smooth(.5, .98, yn))
         base = mix(base, C(.6, .24, .1), head * 0.5) * (0.93 + 0.14 * n1)[..., None]
         turq = mix(C(.1, .66, .7), C(.14, .44, .8), fb(X, Y, 5, 5, 16))
@@ -583,10 +555,65 @@ def paint(name, sp, b, bbox, res):
         col = col * (1 - 0.07 * vb * (0.6 + 0.8 * fb(X, Y, 6, 6, 35)))[..., None]
         alpha = np.where(inside, 1.0, 0.9)
 
-    # the eye socket: skin darkens a little around the eye
-    er = np.hypot(X - (0.5 - sp['eye']['s']), Y - (c + sp['eye']['y']))
-    socket = smooth(sp['eye']['r'] * 1.5, sp['eye']['r'] * 1.02, er) * inside
-    col = col * (1 - 0.3 * socket)[..., None]
+    elif name == 'gourami':
+        # bars of red-orange and turquoise down the flank, leaning back and
+        # uneven in width. They start behind the gill cover: the head and
+        # throat are a plain turquoise, since bars painted over the forehead
+        # and throat stretch round the face and, seen from ahead, ring it
+        # like another eye
+        e = sp['eye']
+        # the bars wander, pinch and now and then break, as the real ones do
+        v = (s + Y * 0.3 + 0.035 * (fbm(X, Y, 7, 41) - 0.5)) * 11.0
+        f = np.abs(np.mod(v, 1.0) - 0.5) * 2
+        bw = 0.27 + 0.2 * (fbm(X, Y, 11, 42) - 0.5)
+        blue = smooth(bw + 0.07, bw - 0.05, f) * (0.55 + 0.45 * smooth(0.3, 0.5, fbm(X, Y, 18, 46)))
+        # a rusty orange-red, never a flat poster red, and the bars a
+        # silvery turquoise that glints with the angle
+        red = mix(C(.78, .26, .1), C(.62, .2, .1), fbm(X, Y, 5, 47)) * (0.88 + 0.24 * n1)[..., None]
+        turq = mix(C(.26, .6, .74), C(.14, .42, .68), fbm(X, Y, 6, 44))
+        # the bars fade out before the back and belly ridges: painted on from
+        # the side, they would otherwise meet over the ridges and, seen from
+        # ahead or behind, close into rings round the body like a target
+        behind = smooth(.2, .3, s) * smooth(.97, .86, yn) * smooth(.04, .15, yn)
+        col = mix(red, turq, blue)
+        face = mix(C(.26, .52, .7), C(.62, .34, .22), smooth(.06, .0, s) * 0.35)
+        col = mix(face * (0.94 + 0.12 * n1)[..., None], col, behind)
+        # the back darkens to olive-brown, the throat and chest glow turquoise
+        col = mix(col, col * C(.6, .55, .45), smooth(.7, 1.0, yn))
+        col = mix(col, C(.3, .62, .78), smooth(.26, .06, yn) * smooth(.52, .3, s) * 0.7)
+        irid = inside * (blue * behind * 0.6 + (1 - behind) * 0.35)
+        metal = irid * 0.4
+        rough = 0.36 - irid * 0.1
+        # fins: the dorsal blue-grey with red spots, the anal fin carrying the
+        # bars on, the tail red with rows of blue dots
+        dots = smooth(0.56, 0.7, fbm(X, Y, 70, 43, o=3))
+        dorsal = mix(C(.2, .52, .82), C(.84, .24, .1), dots * 0.9)
+        anal = mix(C(.82, .3, .12), C(.2, .55, .85), blue * 0.8)
+        tailc = mix(C(.84, .3, .12), C(.25, .6, .9), smooth(0.58, 0.7, fbm(X, Y, 90, 45, o=3)) * 0.85)
+        fin = np.where((Y > c)[..., None], dorsal, anal)
+        fin = np.where((s > 1.0)[..., None], tailc, fin)
+        col = np.where(inside[..., None], col, fin)
+        alpha = np.where(inside, 1.0, np.where(s > 1.0, 0.86, 0.84))
+
+    # the eye: a big round pupil, a smooth reflective iris (fish irises are
+    # guanine mirrors, not fibrous), a thin bright ring at the pupil and a
+    # slightly darker limbus, all painted into the skin
+    e = sp['eye']
+    U = (X - (0.5 - e['s'])) / e['r']
+    Vv = (Y - (b.mid(e['s']) + e['y'])) / e['r']
+    rr = np.hypot(U, Vv)
+    ring_c, low, upp = (np.array(x) for x in IRIS[name])
+    iris = mix(low, upp, smooth(-0.35, 0.5, Vv))
+    iris = iris * (0.85 + 0.25 * fbm(U, Vv, 5, 21))[..., None]
+    iris = mix(iris, ring_c, smooth(0.62, 0.55, rr) * 0.9)
+    iris = iris * (0.72 + 0.28 * smooth(1.0, 0.8, rr))[..., None]
+    if name == 'angel':
+        # the first black bar runs straight through the eye, as wide as it is
+        # on the head round it, so it carries on unbroken over the eye
+        iris = mix(iris, np.array([.05, .04, .04]), smooth(0.62, 0.52, np.abs(U)) * smooth(0.45, 0.6, rr) * 0.9)
+    pupil = smooth(0.53, 0.49, np.hypot(U * 1.04, Vv))
+    eye = smooth(1.03, 0.97, rr) * inside
+    col = mix(col, mix(iris, np.array([.012, .014, .02]), pupil), eye)
 
     # the mouth: a dark cleft at the snout
     mouth = smooth(0.06, 0.0, s) * smooth(0.03, 0.0, np.abs(yn - MOUTH[name])) * inside
@@ -598,7 +625,7 @@ def paint(name, sp, b, bbox, res):
     # the gill cover: an arc behind the eye, from the nape down to the throat
     ex = 0.5 - sp['eye']['s']
     oper = np.hypot((X - ex) * 1.0, (Y - c - sp['eye']['y'] * 0.5) * 0.75)
-    orad = {'neon': .1, 'rummy': .1, 'angel': .13, 'discus': .15}[name]
+    orad = OPER[name]
     ridge = smooth(0.008, 0.0, np.abs(oper - orad)) * (X < ex) * smooth(.12, .3, yn) * smooth(.92, .75, yn) * inside
     headm = smooth(orad + 0.01, orad - 0.02, oper) * inside
     h = mix(h[..., None], (0.35 + 0.1 * n2)[..., None], headm)[..., 0]
@@ -610,38 +637,25 @@ def paint(name, sp, b, bbox, res):
     rough = rough + (cell - 0.5) * 0.14 * inside * (1 - headm)
     metal = metal * (0.85 + 0.3 * cell * inside)
     rough = np.where(inside, rough, 0.2)
+    # the eye is wet and smooth: glossy, no scales, a low dome in the relief so
+    # the lamp's highlight rounds over it, and the lens in the pupil clearer still
+    dome = 0.45 + 0.4 * np.clip(1 - rr * rr, 0, 1)
+    h = h * (1 - eye) + dome * eye
+    rough = rough * (1 - eye) + (0.14 - 0.08 * pupil) * eye
+    metal = metal * (1 - eye) + 0.4 * (1 - pupil) * eye
+    irid = irid * (1 - eye)
 
     colour = np.concatenate([np.clip(col, 0, 1), alpha[..., None]], -1)
     mat = np.stack([np.clip(h * 0.8 + 0.1, 0, 1), np.clip(rough, 0.05, 1), np.clip(metal, 0, 1), np.clip(irid, 0, 1)], -1)
     np.save(os.path.join(OUT, f'{name}_color.npy'), colour[::-1].astype(np.float32))
     np.save(os.path.join(OUT, f'{name}_mat.npy'), mat[::-1].astype(np.float32))
 
-    # the eye: a big round pupil, a smooth reflective iris (fish irises are
-    # guanine mirrors, not fibrous), a thin bright ring at the pupil, a darker
-    # limbus, and the skin's colour over its top and bottom edges
-    E = 256
-    u = np.linspace(-1, 1, E)
-    U, Vv = np.meshgrid(u, u)
-    r = np.hypot(U, Vv)
-    ring_c, low, upp = (np.array(x) for x in IRIS[name])
-    iris = mix(low, upp, smooth(-0.35, 0.5, Vv))
-    iris = iris * (0.85 + 0.25 * fbm(U, Vv, 5, 21))[..., None]
-    iris = mix(iris, ring_c, smooth(0.62, 0.55, r) * 0.9)
-    iris = iris * (0.55 + 0.45 * smooth(1.0, 0.72, r))[..., None]
-    if name == 'angel':
-        # the first black bar runs straight through the eye
-        iris = mix(iris, np.array([.12, .05, .04]), smooth(0.3, 0.2, np.abs(U + 0.05 * Vv)) * smooth(0.5, 0.75, r) * 0.8)
-    pupil = smooth(0.53, 0.49, np.hypot(U * 1.04, Vv))
-    e = mix(iris, np.array([.012, .014, .02]), pupil)
-    eye = np.concatenate([e, np.ones((E, E, 1))], -1)
-    np.save(os.path.join(OUT, f'{name}_eye.npy'), eye[::-1].astype(np.float32))
-
 
 # --------------------------------------------------------------------------- main
 for o in list(bpy.data.objects):
     bpy.data.objects.remove(o)
 meta = {}
-RES = {'neon': (1024, 384), 'rummy': (1024, 384), 'angel': (1024, 1024), 'discus': (1024, 1024)}
+RES = {'neon': (1024, 384), 'rummy': (1024, 384), 'angel': (1024, 1024), 'discus': (1024, 1024), 'gourami': (1024, 1024)}
 for name, sp in SPECIES.items():
     ob, b, bbox = build(name, sp)
     paint(name, sp, b, bbox, RES[name])

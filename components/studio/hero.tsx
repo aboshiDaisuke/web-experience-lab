@@ -28,7 +28,7 @@ export default function Hero() {
         ref={host}
         className="st-hero-canvas"
         role="img"
-        aria-label="水草の茂る水槽を、ネオンテトラの群れやエンゼルフィッシュ、ディスカスが泳いでいます。ガラスに触れると魚が寄ってきて、たたくと散ります。"
+        aria-label="水草の茂る水槽を、ネオンテトラの群れやドワーフグラミーが泳いでいます。ガラスに触れると魚が寄ってきて、たたくと散ります。"
       />
       <div className="st-hero-copy">
         <h1 id="hero-title">

@@ -8,6 +8,40 @@ import { waterGlsl } from './water';
  * shader so the current moves them.
  */
 
+/*
+ * Surface detail too fine to model: value noise in world space, and a bump
+ * from any height field by its screen-space derivatives (Mikkelsen's
+ * unparametrized bump mapping), so it needs no UVs or tangents.
+ */
+export const detailGlsl = /* glsl */ `
+float dHash(vec3 p) {
+  p = fract(p * 0.3183099 + 0.1);
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float dNoise(vec3 x) {
+  vec3 i = floor(x);
+  vec3 f = fract(x);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(dHash(i), dHash(i + vec3(1, 0, 0)), f.x), mix(dHash(i + vec3(0, 1, 0)), dHash(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(dHash(i + vec3(0, 0, 1)), dHash(i + vec3(1, 0, 1)), f.x), mix(dHash(i + vec3(0, 1, 1)), dHash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+float dFbm(vec3 p) {
+  float t = 0.0, a = 0.5;
+  for (int i = 0; i < 4; i++) { t += a * dNoise(p); p = p * 2.03 + 7.1; a *= 0.5; }
+  return t / 0.9375;
+}
+vec3 dBump(vec3 n, float h, float amount) {
+  vec3 dpdx = dFdx(-vViewPosition);
+  vec3 dpdy = dFdy(-vViewPosition);
+  vec3 r1 = cross(dpdy, n);
+  vec3 r2 = cross(n, dpdx);
+  float det = dot(dpdx, r1);
+  vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
+  return normalize(abs(det) * n - grad * amount);
+}
+`;
+
 const hash = (x: number, y: number) => {
   const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
   return s - Math.floor(s);
@@ -100,6 +134,8 @@ function sandTexture() {
 }
 
 export function createSand(caustics: (s: T.WebGLProgramParametersWithUniforms) => void) {
+  // where each stone and root meets the bed: centre and footprint
+  const feet = HARDSCAPE.map((h) => new T.Vector3(h.x, h.z, h.clear));
   const geo = new T.PlaneGeometry(140, 62, 280, 124);
   geo.rotateX(-Math.PI / 2);
   geo.translate(0, 0, -21);
@@ -112,6 +148,25 @@ export function createSand(caustics: (s: T.WebGLProgramParametersWithUniforms) =
   const mat = new T.MeshStandardMaterial({ map: tex, bumpMap: tex, bumpScale: 1.5, roughness: 0.95 });
   mat.onBeforeCompile = (s) => {
     caustics(s);
+    s.uniforms.uFeet = { value: feet };
+    s.fragmentShader = s.fragmentShader
+      .replace('#include <common>', `#include <common>\nuniform vec3 uFeet[${feet.length}];\n${detailGlsl}`)
+      .replace(
+        '#include <color_fragment>',
+        /* glsl */ `#include <color_fragment>
+        {
+          // little light reaches the sand tucked in at a stone's foot, and
+          // mulm settles there; elsewhere the bed is mottled, never one tone
+          float shade = 1.0;
+          for (int i = 0; i < ${feet.length}; i++) {
+            float d = length(vCausticPos.xz - uFeet[i].xy) / uFeet[i].z;
+            shade *= mix(0.45, 1.0, smoothstep(0.8, 1.7, d));
+          }
+          float mott = dFbm(vCausticPos * 0.18);
+          diffuseColor.rgb *= shade * (0.86 + 0.24 * mott);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.78, 0.72, 0.6), (1.0 - shade) * 0.6);
+        }`,
+      );
     // bumpMap reads red; the grain height lives in alpha
     s.fragmentShader = s.fragmentShader.replaceAll('texture2D( bumpMap, vBumpMapUv ).x', 'texture2D( bumpMap, vBumpMapUv ).a');
     s.fragmentShader = s.fragmentShader.replaceAll('texture2D( bumpMap, vBumpMapUv + dSTdx ).x', 'texture2D( bumpMap, vBumpMapUv + dSTdx ).a');
@@ -208,7 +263,23 @@ type Look = {
   shade: string;
   glow: number;
   roughness?: number;
+  // shade down in the bed: [darkest, height over the root it clears by]
+  ao: [number, number];
+  // share of the lamp that comes through a leaf lit from behind
+  through: number;
 };
+
+// light reaching a leaf from its far side shows through it, warmed green by
+// the chlorophyll; the lower, crowded leaves get little of it
+const leafThrough = /* glsl */ `#include <lights_fragment_end>
+  #if NUM_DIR_LIGHTS > 0
+  {
+    float through = max(0.0, -dot(normal, directionalLights[0].direction));
+    float open = smoothstep(0.0, uAo.y * 1.5, vRise);
+    reflectedLight.indirectDiffuse += diffuseColor.rgb * vec3(0.9, 1.1, 0.6) * directionalLights[0].color
+      * causticLight * through * open * uThrough;
+  }
+  #endif`;
 
 function plantMaterial(sway: Sway, caustics: (s: T.WebGLProgramParametersWithUniforms) => void, look: Look) {
   const mat = new T.MeshStandardMaterial({ roughness: look.roughness ?? 0.55, side: T.DoubleSide });
@@ -216,10 +287,12 @@ function plantMaterial(sway: Sway, caustics: (s: T.WebGLProgramParametersWithUni
   const patch = (s: T.WebGLProgramParametersWithUniforms, depth = false) => {
     Object.assign(s.uniforms, sway);
     s.uniforms.uColors = { value: colors };
+    s.uniforms.uAo = { value: new T.Vector2(...look.ao) };
+    s.uniforms.uThrough = { value: look.through };
     s.vertexShader = s.vertexShader
       .replace('#include <common>', `#include <common>\n${plantVertex}`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>\n${plantBegin}`);
-    const head = `#include <common>\nvarying float vRise;\nvarying float vVar;\nvarying vec2 vLeaf;\nuniform vec3 uColors[${colors.length}];`;
+    const head = `#include <common>\nvarying float vRise;\nvarying float vVar;\nvarying vec2 vLeaf;\nuniform vec3 uColors[${colors.length}];\nuniform vec2 uAo;\nuniform float uThrough;`;
     if (depth) {
       s.fragmentShader = s.fragmentShader
         .replace('#include <common>', head)
@@ -229,7 +302,11 @@ function plantMaterial(sway: Sway, caustics: (s: T.WebGLProgramParametersWithUni
     s.fragmentShader = s.fragmentShader
       .replace('#include <common>', head)
       .replace('void main() {', `void main() {\n${look.shape}`)
-      .replace('#include <color_fragment>', `#include <color_fragment>\n${look.shade}`)
+      .replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>\n${look.shade}\n  diffuseColor.rgb *= mix(uAo.x, 1.0, smoothstep(0.0, uAo.y, vRise));`,
+      )
+      .replace('#include <lights_fragment_end>', leafThrough)
       // leaves are thin: light from the glowing back screen comes through them
       .replace(
         '#include <emissivemap_fragment>',
@@ -239,7 +316,7 @@ function plantMaterial(sway: Sway, caustics: (s: T.WebGLProgramParametersWithUni
   };
   mat.onBeforeCompile = (s) => patch(s);
   // every plant shares the same patch function, so tell three the programs differ
-  const key = `plant:${look.shape}:${look.shade}:${look.glow}`;
+  const key = `plant:${look.shape}:${look.shade}:${look.glow}:${look.ao.join(',')}:${look.through}`;
   mat.customProgramCacheKey = () => key;
   const depth = new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking });
   depth.onBeforeCompile = (s) => patch(s, true);
@@ -318,9 +395,9 @@ export function createPlants(
   const vallis: Placement[] = [];
   const banks: [number, number, number, number, number][] = [
     // x0, x1, z0, z1, count
-    [-62, -24, -46, -32, 190],
-    [24, 62, -46, -30, 170],
-    [-24, -12, -46, -40, 40],
+    [-62, -24, -46, -32, 260],
+    [24, 62, -46, -30, 230],
+    [-24, -12, -46, -40, 55],
   ];
   for (const [x0, x1, z0, z1, n] of banks)
     for (let i = 0; i < Math.round(n * scale); i++) {
@@ -337,7 +414,8 @@ export function createPlants(
         vallis.push({
           pos: new T.Vector3(x, y, z),
           rot: new T.Euler(rnd(-0.12, 0.12), rnd(0, Math.PI), rnd(-0.15, 0.15)),
-          scale: new T.Vector3(rnd(0.55, 0.85), h, 1),
+          // a blade is barely a finger wide for all its length
+          scale: new T.Vector3(rnd(0.32, 0.55), h, 1),
           plant: [rnd(0, 6.28), rnd(1.6, 2.6), y, Math.random()],
         });
       }
@@ -351,11 +429,21 @@ export function createPlants(
         shade: /* glsl */ `
           float t = clamp(vRise / 40.0, 0.0, 1.0);
           vec3 c = mix(uColors[0], uColors[1], smoothstep(0.0, 0.8, t) * (0.55 + vVar * 0.45));
+          // no two blades quite the same green
+          c *= 0.78 + 0.4 * fract(vVar * 13.7);
           c = mix(c, uColors[2], step(0.86, vVar) * 0.7);
           // fine veins along the blade
           c *= 0.9 + 0.1 * sin(vLeaf.x * 40.0);
+          // the blade is thinnest, and lets most light through, at its edges
+          c *= 1.0 + 0.18 * smoothstep(0.3, 0.5, abs(vLeaf.x - 0.5));
+          // old blades yellow and brown from the tip, and some carry a film of algae
+          float old = step(0.93, fract(vVar * 7.31));
+          c = mix(c, vec3(0.42, 0.36, 0.12), old * smoothstep(0.55, 1.0, vLeaf.y) * 0.8);
+          c = mix(c, c * vec3(0.72, 0.7, 0.5), step(0.8, fract(vVar * 3.7)) * 0.5);
           diffuseColor.rgb = c;`,
-        glow: 0.7,
+        glow: 0.5,
+        ao: [0.3, 16],
+        through: 0.45,
       }),
       vallis,
       { cast: true, receive: true },
@@ -412,7 +500,9 @@ export function createPlants(
           c *= 0.82 + 0.3 * (1.0 - abs(vLeaf.x - 0.5) * 2.0);
           c *= 1.0 - 0.18 * (1.0 - smoothstep(0.0, 0.05, abs(vLeaf.x - 0.5)));
           diffuseColor.rgb = c;`,
-        glow: 0.6,
+        glow: 0.45,
+        ao: [0.35, 14],
+        through: 0.4,
       }),
       stems,
       { cast: true, receive: true },
@@ -494,8 +584,10 @@ export function createPlants(
           c = mix(c, uColors[3], mid * 0.35 * step(0.35, vLeaf.y));
           c *= 0.9 + 0.12 * sin(vLeaf.y * 40.0 + vLeaf.x * 6.0);
           diffuseColor.rgb = c;`,
-        glow: 0.35,
+        glow: 0.3,
         roughness: 0.4,
+        ao: [0.45, 3.5],
+        through: 0.3,
       }),
       crypts,
       { cast: true, receive: true, low: true },
@@ -535,9 +627,14 @@ export function createPlants(
         shade: /* glsl */ `
           vec3 c = mix(uColors[0], uColors[1], smoothstep(0.0, 0.8, vVar));
           c = mix(c, uColors[2], smoothstep(0.85, 1.0, vVar) * 0.5);
+          // each leaf a little cupped: lighter at the rim, darker at the stalk
+          vec2 q = vLeaf * 2.0 - 1.0;
+          c *= 0.82 + 0.3 * smoothstep(0.1, 1.0, dot(q, q));
           diffuseColor.rgb = c;`,
-        glow: 0.25,
+        glow: 0.22,
         roughness: 0.45,
+        ao: [0.3, 2.6],
+        through: 0.25,
       }),
       carpet,
       { cast: false, receive: true, low: true },
@@ -578,16 +675,20 @@ export function createPlants(
     instanced(
       swordLeaf,
       plantMaterial(sway, caustics, {
-        color: [0x2b5a1e, 0x5c9a33, 0x9ccc5e],
+        color: [0x1f4418, 0x3f7426, 0x88b456],
         shape: '',
         shade: /* glsl */ `
           float mid = 1.0 - smoothstep(0.0, 0.06, abs(vLeaf.x - 0.5));
           float veins = smoothstep(0.92, 1.0, sin((vLeaf.y * 14.0 - abs(vLeaf.x - 0.5) * 9.0) * 3.14159));
-          vec3 c = mix(uColors[0], uColors[1], 0.4 + 0.6 * vLeaf.y) * (0.9 + vVar * 0.2);
-          c = mix(c, uColors[2], mid * 0.6 + veins * 0.15);
+          vec3 c = mix(uColors[0], uColors[1], 0.4 + 0.6 * vLeaf.y) * (0.8 + vVar * 0.35);
+          c = mix(c, uColors[2], mid * 0.55 + veins * 0.2);
+          // darker between the veins, where the blade bulges
+          c *= 0.88 + 0.12 * veins;
           diffuseColor.rgb = c;`,
-        glow: 0.45,
+        glow: 0.22,
         roughness: 0.35,
+        ao: [0.45, 6],
+        through: 0.35,
       }),
       swords,
       { cast: true, receive: true, low: true },
@@ -595,6 +696,75 @@ export function createPlants(
   );
 
   return group;
+}
+
+/*
+ * Gravel: the chips and pebbles aquascapers scatter where the big stones meet
+ * the sand, and a few along the path's edges, so the rocks look set into the
+ * bed rather than dropped on it. One lumpy pebble, instanced at many sizes
+ * and turns, each in its own shade of grey or brown.
+ */
+export function createGravel(caustics: (s: T.WebGLProgramParametersWithUniforms) => void, scale = 1) {
+  const geo = new T.IcosahedronGeometry(1, 2);
+  {
+    const p = geo.attributes.position;
+    const v = new T.Vector3();
+    for (let i = 0; i < p.count; i++) {
+      v.fromBufferAttribute(p, i);
+      // flattened, faceted a little, never a sphere
+      const k = 1 + 0.22 * Math.sin(v.x * 3.1 + v.y * 1.7) * Math.cos(v.z * 2.3) + 0.12 * Math.sin(v.y * 7.0 + v.z * 5.0);
+      p.setXYZ(i, v.x * k * 1.15, v.y * k * 0.62, v.z * k);
+    }
+    geo.computeVertexNormals();
+  }
+  const mat = new T.MeshStandardMaterial({ roughness: 0.75 });
+  mat.onBeforeCompile = (s) => {
+    caustics(s);
+    s.fragmentShader = s.fragmentShader
+      .replace('#include <common>', `#include <common>\n${detailGlsl}`)
+      .replace(
+        '#include <normal_fragment_maps>',
+        '#include <normal_fragment_maps>\n  normal = dBump(normal, dFbm(vCausticPos * 4.0), 0.8);',
+      );
+  };
+  const items: { x: number; z: number; r: number }[] = [];
+  const near = HARDSCAPE.filter((h) => !h.name.startsWith('wood'));
+  for (const h of near)
+    for (let i = 0; i < Math.round(h.clear * 16 * scale); i++) {
+      // most lie right at the foot, thinning out away from it
+      const a = Math.random() * Math.PI * 2;
+      const d = h.clear * (0.75 + Math.pow(Math.random(), 2.2) * 0.9);
+      items.push({ x: h.x + Math.cos(a) * d, z: h.z + Math.sin(a) * d, r: rnd(0.16, 0.45) * (1.25 - (d / h.clear - 0.75)) });
+    }
+  for (let i = 0; i < Math.round(220 * scale); i++) {
+    const z = rnd(-34, -2);
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const x = Math.sin(z * 0.1) * 9 + 6 + side * (5 + (z + 36) * 0.18 + rnd(-1.5, 0.8));
+    items.push({ x, z, r: rnd(0.12, 0.32) });
+  }
+  const mesh = new T.InstancedMesh(geo, mat, items.length);
+  const mtx = new T.Matrix4();
+  const q = new T.Quaternion();
+  const e = new T.Euler();
+  const pos = new T.Vector3();
+  const sc = new T.Vector3();
+  const col = new T.Color();
+  items.forEach((it, i) => {
+    pos.set(it.x, sandHeight(it.x, it.z) + it.r * 0.25, it.z);
+    q.setFromEuler(e.set(rnd(-0.3, 0.3), rnd(0, Math.PI * 2), rnd(-0.3, 0.3)));
+    sc.set(it.r * rnd(0.8, 1.3), it.r, it.r * rnd(0.8, 1.3));
+    mesh.setMatrixAt(i, mtx.compose(pos, q, sc));
+    // blue-grey Seiryu chips, with some brown and pale river pebbles
+    const pick = Math.random();
+    if (pick < 0.55) col.setRGB(0.42, 0.44, 0.45).multiplyScalar(rnd(0.75, 1.25));
+    else if (pick < 0.8) col.setRGB(0.52, 0.43, 0.33).multiplyScalar(rnd(0.75, 1.2));
+    else col.setRGB(0.8, 0.76, 0.7).multiplyScalar(rnd(0.85, 1.1));
+    mesh.setColorAt(i, col);
+  });
+  mesh.receiveShadow = true;
+  mesh.frustumCulled = false;
+  mesh.layers.set(LOW);
+  return mesh;
 }
 
 export async function loadHardscape(
@@ -616,20 +786,51 @@ export async function loadHardscape(
       const m = o as T.Mesh;
       if (!m.isMesh) return;
       const mat = (m.material as T.MeshStandardMaterial).clone();
-      // the bake is a cool grey; under the lamp Seiryu stone reads warmer
-      mat.color.setRGB(1.0, 0.93, 0.84);
+      const wood = h.name.startsWith('wood');
+      // the bake is a cool grey; under the lamp Seiryu stone reads warmer.
+      // The wood is waterlogged root, a reddish brown, not charcoal
+      if (wood) mat.color.setRGB(1.55, 1.2, 0.95);
+      else mat.color.setRGB(1.0, 0.93, 0.84);
       mat.envMap = env;
       mat.envMapIntensity = 0.3;
-      mat.roughness = 0.82;
+      mat.roughness = wood ? 0.78 : 0.82;
       mat.onBeforeCompile = (s) => {
         caustics(s);
         // where stone meets sand, little light gets in
         s.uniforms.uFoot = { value: ground };
+        s.uniforms.uWood = { value: wood ? 1 : 0 };
         s.fragmentShader = s.fragmentShader
-          .replace('#include <common>', '#include <common>\nuniform float uFoot;')
+          .replace('#include <common>', `#include <common>\nuniform float uFoot;\nuniform float uWood;\n${detailGlsl}`)
           .replace(
             '#include <color_fragment>',
-            '#include <color_fragment>\n  diffuseColor.rgb *= mix(0.35, 1.0, smoothstep(uFoot - 0.8, uFoot + 3.5, vCausticPos.y));',
+            /* glsl */ `#include <color_fragment>
+            // Seiryu is laid down in beds: the softer layers weather back into
+            // shallow grooves that run round the stone (shared with the relief below)
+            float rockBed = 0.5 + 0.5 * sin(vCausticPos.y * 1.7 + dFbm(vCausticPos * 0.22) * 6.0);
+            {
+              vec3 wp = vCausticPos;
+              diffuseColor.rgb *= mix(0.35, 1.0, smoothstep(uFoot - 0.8, uFoot + 3.5, wp.y));
+              // weathered stone is never one grey: patches, and fine grit
+              float patchy = dFbm(wp * 0.35);
+              diffuseColor.rgb *= 0.8 + 0.34 * patchy + 0.06 * (dNoise(wp * 7.0) - 0.5);
+              diffuseColor.rgb *= 1.0 - (1.0 - uWood) * (1.0 - rockBed) * 0.14;
+              // a brown-green film of algae and diatoms creeps up from the bed
+              float film = smoothstep(uFoot + 5.0, uFoot + 0.5, wp.y) * smoothstep(0.4, 0.62, patchy);
+              diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.2, 0.22, 0.1), film * 0.55);
+            }`,
+          )
+          .replace(
+            '#include <normal_fragment_maps>',
+            /* glsl */ `#include <normal_fragment_maps>
+            {
+              vec3 wp = vCausticPos;
+              // stone: weathered, gently uneven faces over its beds, not pitted
+              // all over like lava rock. Wood: a fine grain
+              float h = uWood > 0.5
+                ? dFbm(wp * vec3(3.0, 0.8, 3.0))
+                : dFbm(wp * 0.6) * 0.7 + smoothstep(0.2, 0.8, rockBed) * 0.25 + dNoise(wp * 3.0) * 0.05;
+              normal = dBump(normal, h, uWood > 0.5 ? 0.3 : 0.6);
+            }`,
           );
       };
       m.material = mat;
@@ -730,6 +931,8 @@ export function dressWood(
           diffuseColor.rgb = c;`,
         glow: 0.3,
         roughness: 0.7,
+        ao: [0.55, 1.2],
+        through: 0.2,
       }),
       moss,
       { cast: false, receive: true, low: true },
@@ -752,7 +955,7 @@ export function dressWood(
     instanced(
       lance,
       plantMaterial(sway, caustics, {
-        color: [0x173f14, 0x2f6a22, 0x8fbf5a],
+        color: [0x183a16, 0x2d5a22, 0x7ea552],
         shape: '',
         shade: /* glsl */ `
           float mid = 1.0 - smoothstep(0.0, 0.05, abs(vLeaf.x - 0.5));
@@ -761,8 +964,10 @@ export function dressWood(
           c = mix(c, uColors[2], mid * 0.5);
           c *= 1.0 - veins * 0.25;
           diffuseColor.rgb = c;`,
-        glow: 0.35,
+        glow: 0.3,
         roughness: 0.3,
+        ao: [0.5, 4],
+        through: 0.35,
       }),
       ferns,
       { cast: true, receive: true },
