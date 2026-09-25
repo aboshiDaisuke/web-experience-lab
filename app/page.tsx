@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpRight, Plus } from 'lucide-react';
 import { projects } from '@/lib/portfolio';
-import { services, plans, steps, faqs } from '@/lib/studio';
+import { services, plans, options, estimates, extraCosts, steps, faqs } from '@/lib/studio';
 import Hero from '@/components/studio/hero';
 import Works from '@/components/studio/works';
 import WebMCP from '@/components/webmcp';
@@ -103,9 +103,8 @@ export default function Home() {
         <div className="st-section-head">
           <h2 id="plans-title">料金の目安</h2>
           <p>
-            ページ数や機能、<a href="#setup">サーバーやドメインをお持ちかどうか</a>によって変わるため、正式な金額はご相談のあとにお見積りします。いずれも税別で、サーバーなどの月々の利用料は含みません。
+            ページ数やデザインの複雑さ、<a href="#setup">サーバーやドメインをお持ちかどうか</a>によって変わるため、正式な金額はご相談のあとにお見積りします。いずれも税別の制作費です。本文・写真素材はご提供ください。
           </p>
-          <p className="st-plan-dummy">※ 掲載している金額は仮のダミーです。実際の料金は別途お知らせします。</p>
         </div>
         <div className="st-plan-grid">
           {plans.map((plan) => {
@@ -115,10 +114,7 @@ export default function Home() {
                 <h3>{plan.name}</h3>
                 <p className="st-plan-fit">{plan.fit}</p>
                 <p className="st-plan-price">
-                  <em>
-                    {plan.price}
-                    <small>ダミー</small>
-                  </em>
+                  <em>{plan.price}</em>
                   <span>{plan.period}</span>
                 </p>
                 <ul>
@@ -143,12 +139,53 @@ export default function Home() {
             );
           })}
         </div>
+        <div className="st-plan-more">
+          <div>
+            <h3>オプション（税別）</h3>
+            <dl className="st-options">
+              {options.map((o) => (
+                <div key={o.name}>
+                  <dt>
+                    {o.name}
+                    {o.note && <small>{o.note}</small>}
+                  </dt>
+                  <dd>
+                    {o.price}
+                    <span> / {o.unit}</span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p className="st-plan-note">※「〜」の金額は、ページ数・デザインの複雑さ・ご要件に応じて変わります。</p>
+          </div>
+          <div>
+            <h3>お見積りの例</h3>
+            <ul className="st-estimates">
+              {estimates.map((e) => (
+                <li key={e.title}>
+                  <b>{e.title}</b>
+                  <span>{e.lines.join(' ＋ ')}</span>
+                  <em>
+                    合計 {e.total}
+                    <small>{e.after}</small>
+                  </em>
+                </li>
+              ))}
+            </ul>
+            <h3>別途費用がかかるもの</h3>
+            <ul className="st-extra-costs">
+              {extraCosts.map((c) => (
+                <li key={c}>{c}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </section>
 
       <section id="process" className="st-process" aria-labelledby="process-title">
         <div className="st-section-head">
           <h2 id="process-title">制作の流れ</h2>
-          <p>ご相談から公開まで、ブランドサイトでおよそ6〜8週間です。</p>
+          <p>ご相談から納品まで、約1か月〜が目安です。ページ数や内容によって変わります。</p>
         </div>
         <ol className="st-steps">
           {steps.map((s, i) => (

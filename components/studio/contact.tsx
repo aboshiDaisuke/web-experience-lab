@@ -7,7 +7,7 @@ import { BASE } from '@/lib/base-path';
 
 const kinds = [...plans.map((p) => p.name), 'まだ決めていない'];
 const envs = [...setups.map((u) => u.name), 'よく分からない'];
-const budgets = ['30万円未満', '30〜60万円', '60〜100万円', '100万円以上', '未定'];
+const budgets = ['10万円未満', '10〜30万円', '30〜60万円', '60万円以上', '未定'];
 const timings = ['1か月以内', '2〜3か月後', '半年以内', '未定'];
 type Form = {
   ref: string;

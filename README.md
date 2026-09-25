@@ -10,7 +10,7 @@
 - `app/studio.css`: トップと相談ボタンのスタイル
 - `public/images/works/<slug>-desktop.jpg / -mobile.jpg`: 各作品の実画面キャプチャ（作品を変えたら撮り直す。`/works/<slug>?embed=1` を 1440×900 と 390×844@2x で、スクロールバー非表示で撮影）
 
-相談フォームは `contactEndpoint` が空のあいだは確認画面まで動き、送信はしません（完了画面にもその旨を表示）。Formspree等の受信URLを入れるとJSONでPOSTします。料金・期間・サポート内容は仮の値なので、実際の条件に合わせて `lib/studio.ts` を書き換えてください。
+相談フォームは `contactEndpoint` が空のあいだは確認画面まで動き、送信はしません（完了画面にもその旨を表示）。Formspree等の受信URLを入れるとJSONでPOSTします。料金・納期・オプションは FTL「デジタル広報支援サービス」2026年度版（https://www.ftl.co.jp/products.html）に合わせています（3D・インタラクティブは個別お見積り）。改定があれば `lib/studio.ts` を書き換えてください。
 
 ## 作品ページの演出（signatures）
 
