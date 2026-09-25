@@ -2256,3 +2256,286 @@ html:has(.studio) {
   opacity: 1;
   text-shadow: 0 1px 10px rgba(3, 14, 16, 0.65);
 }
+
+/* splash: kinetic type for 未来技術研究所 / デジタル広報支援サービス / WEBSITE PORTFOLIO.
+   The motion lives in lib/splash.ts (GSAP); this sheet sets the layout and the start states. */
+.st-splash {
+  --r: 0px;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(80% 60% at 50% 115%, #2a2f86 0%, transparent 60%),
+    radial-gradient(60% 50% at 50% -10%, #1b1f55 0%, transparent 60%),
+    #0a0c22;
+  color: #fff;
+  cursor: pointer;
+  /* the exit opens an iris from the centre */
+  -webkit-mask: radial-gradient(circle at 50% 50%, transparent var(--r), #000 calc(var(--r) + 1px));
+  mask: radial-gradient(circle at 50% 50%, transparent var(--r), #000 calc(var(--r) + 1px));
+}
+html[data-splash='skip'] .st-splash {
+  display: none;
+}
+.st-splash-light {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(26% 22% at 28% 40%, rgba(90, 110, 255, 0.28), transparent 70%),
+    radial-gradient(24% 20% at 72% 62%, rgba(255, 45, 120, 0.14), transparent 70%),
+    radial-gradient(28% 18% at 55% 22%, rgba(25, 227, 255, 0.12), transparent 70%);
+  filter: blur(12px);
+  animation: st-splash-drift 6s ease-in-out infinite alternate;
+}
+@keyframes st-splash-drift {
+  from {
+    transform: translate3d(-4%, 3%, 0) rotate(0deg) scale(1);
+  }
+  to {
+    transform: translate3d(4%, -3%, 0) rotate(12deg) scale(1.12);
+  }
+}
+.sx-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  perspective: 900px;
+}
+.sx-stage > * {
+  grid-area: 1 / 1;
+}
+/* shock ring, rays and the particles of the final punch */
+.sx-burst {
+  position: relative;
+  width: 0;
+  height: 0;
+}
+.sx-ring {
+  position: absolute;
+  left: -160px;
+  top: -160px;
+  width: 320px;
+  height: 320px;
+  border: 2px solid rgba(169, 180, 255, 0.9);
+  border-radius: 50%;
+  box-shadow:
+    0 0 40px rgba(120, 140, 255, 0.6),
+    inset 0 0 30px rgba(120, 140, 255, 0.4);
+  visibility: hidden;
+}
+.sx-ray {
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 240px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), #fff 60%, rgba(25, 227, 255, 0.9));
+  transform-origin: 0 50%;
+  visibility: hidden;
+}
+.sx-dot {
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 14px rgba(169, 180, 255, 0.9);
+  visibility: hidden;
+}
+.sx-dot:nth-child(3n) {
+  background: #19e3ff;
+}
+.sx-dot:nth-child(3n + 1) {
+  background: #ff2d78;
+}
+/* 未来 / 技術 / 研究所, slammed in at full size */
+.sx-bigs {
+  display: grid;
+  place-items: center;
+}
+.sx-big {
+  grid-area: 1 / 1;
+  font:
+    900 clamp(84px, 17vw, 260px) / 1 var(--gothic);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  visibility: hidden;
+  text-shadow: 0 0 60px rgba(120, 140, 255, 0.45);
+}
+.sx-big:nth-child(2) {
+  color: #19e3ff;
+}
+.sx-big:nth-child(3) {
+  color: #ff2d78;
+}
+/* the finished card */
+.sx-card {
+  display: grid;
+  justify-items: center;
+  gap: clamp(14px, 2vw, 24px);
+  padding: 0 16px;
+  text-align: center;
+}
+.sx-card p {
+  margin: 0;
+  white-space: nowrap;
+}
+.sx-org span,
+.sx-service span,
+.sx-kind span {
+  display: inline-block;
+  visibility: hidden;
+}
+.sx-org {
+  font:
+    700 clamp(18px, 2vw, 26px) / 1 var(--gothic);
+  letter-spacing: 0.5em;
+  margin-right: -0.5em;
+  color: rgba(255, 255, 255, 0.9);
+}
+.sx-service {
+  font:
+    900 clamp(34px, 6.4vw, 96px) / 1.15 var(--gothic);
+  letter-spacing: 0.02em;
+}
+.sx-service span {
+  transform-origin: 50% 100%;
+}
+.sx-kind {
+  position: relative;
+  font:
+    400 clamp(28px, 4.4vw, 64px) / 1 'Anton', 'Impact', 'Arial Narrow', sans-serif;
+  letter-spacing: 0.08em;
+  margin-right: -0.08em;
+  color: #a9b4ff;
+}
+.sx-bar {
+  position: absolute;
+  inset: -0.08em -0.3em;
+  background: linear-gradient(90deg, #4452e0, #19e3ff 60%, #ff2d78);
+  visibility: hidden;
+}
+.sx-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.8em;
+  font-size: 16px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.9);
+  visibility: hidden;
+}
+.sx-num {
+  min-width: 1.6em;
+  font:
+    400 2.2em / 1 'Anton', 'Impact', sans-serif;
+  letter-spacing: 0.02em;
+  color: #19e3ff;
+}
+.sx-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+.st-splash-skip {
+  position: absolute;
+  z-index: 2;
+  right: clamp(16px, 3vw, 40px);
+  bottom: clamp(16px, 3vw, 40px);
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.9);
+  transition:
+    background 0.3s,
+    border-color 0.3s,
+    opacity 0.3s;
+}
+.st-splash-skip:hover {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.st-splash.is-out {
+  pointer-events: none;
+}
+.st-splash.is-out .st-splash-skip {
+  opacity: 0;
+}
+/* while the splash plays, the hero copy waits; it rises in as the iris opens */
+html[data-splash='play'] .st-hero-copy > *,
+html[data-splash='out'] .st-hero-copy > * {
+  opacity: 0;
+  transform: translateY(28px);
+}
+html[data-splash='out'] .st-hero-copy > * {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 1s ease,
+    transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+html[data-splash='out'] .st-hero-copy > :nth-child(1) {
+  transition-delay: 0.9s;
+}
+html[data-splash='out'] .st-hero-copy > :nth-child(2) {
+  transition-delay: 1.05s;
+}
+html[data-splash='out'] .st-hero-copy > :nth-child(3) {
+  transition-delay: 1.2s;
+}
+html[data-splash='play'] .st-hero-canvas {
+  transform: scale(1.12);
+}
+html[data-splash='out'] .st-hero-canvas {
+  transform: none;
+  transition: transform 2s cubic-bezier(0.16, 1, 0.3, 1) 0.4s;
+}
+@media (max-width: 600px) {
+  .sx-service {
+    font-size: clamp(24px, 7.6vw, 36px);
+  }
+  .sx-org {
+    letter-spacing: 0.3em;
+    margin-right: -0.3em;
+  }
+  .sx-kind {
+    font-size: clamp(26px, 8vw, 36px);
+  }
+  .sx-count {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+}
+/* reduced motion: no kinetic type, just the finished card, then a fade */
+@media (prefers-reduced-motion: reduce) {
+  .st-splash-light {
+    animation: none;
+  }
+  .sx-org span,
+  .sx-service span,
+  .sx-kind span,
+  .sx-count {
+    visibility: visible;
+  }
+  .st-splash.is-out {
+    opacity: 0;
+    transition: opacity 0.5s ease !important;
+  }
+  html[data-splash='play'] .st-hero-copy > *,
+  html[data-splash='out'] .st-hero-copy > *,
+  html[data-splash='play'] .st-hero-canvas {
+    transform: none;
+  }
+}

@@ -10,6 +10,7 @@ import Contact from '@/components/studio/contact';
 import ToTop from '@/components/studio/to-top';
 import StudioHeader, { StudioFooter } from '@/components/studio/header';
 import Showcase from '@/components/studio/showcase';
+import Splash from '@/components/studio/splash';
 import { BASE } from '@/lib/base-path';
 const byslug = (slug: string) => projects.find((p) => p.slug === slug)!;
 
@@ -22,6 +23,7 @@ export default function Home() {
   }, []);
   return (
     <main className="studio">
+      <Splash />
       <a className="st-skip" href="#works">
         作品一覧へ移動
       </a>
