@@ -21,7 +21,7 @@ import { BASE } from '@/lib/base-path';
 export const metadata: Metadata = {
   title: 'Web Experience Lab — 触れて伝わるWebサイト制作',
   description:
-    '企業サイト、美容室、レストランから車屋・八百屋・図書館・市役所まで。実際に操作できる15の制作サンプルと、料金・制作の流れ・ご相談窓口。',
+    '3Dで乗りこめる新型車、箱詰めカートの通販、遊べるゲーム会社から、八百屋・図書館・市役所まで。ブラウザで実際に動く18の制作サンプルと、料金・制作の流れ・ご相談窓口。',
 };
 export default function RootLayout({
   children,

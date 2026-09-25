@@ -194,5 +194,44 @@ export const projects = [
     tags: ['手続きナビ', 'やさしい日本語', '窓口の混雑'],
     note: '「番号札をとる」から、引っ越しや出産などの用事を選んでください。',
   },
+  {
+    slug: 'arc',
+    name: 'MIRAI ARC',
+    category: '自動車メーカー・新型車',
+    type: 'AUTOMOTIVE 3D',
+    image: 'machine',
+    color: '#20262e',
+    title: '触れて、開けて、\n乗りこむ新型車。',
+    description:
+      '架空の電気自動車の新型車サイト。3Dの車体を回して色を選び、ドアを開けて運転席に座れる。グレードと価格の試算から試乗予約まで。',
+    tags: ['3Dコンフィギュレーター', '運転席に乗る', '試乗予約'],
+    note: '車体をドラッグで回し、ドアに触れて開け、「乗りこむ」で運転席へ。',
+  },
+  {
+    slug: 'goods',
+    name: 'MIRAI GOODS',
+    category: '通販・ECサイト',
+    type: 'E-COMMERCE',
+    image: 'studio',
+    color: '#8a6a4a',
+    title: '選んだ道具が、\n箱に詰まっていく。',
+    description:
+      '器や台所道具の通販サイト。カートは段ボール箱で、入れた品が箱に落ちて詰まり、箱の大きさと送料がその場で決まる。',
+    tags: ['商品検索', '箱詰めカート', '購入手続き'],
+    note: '商品を「かごに入れる」と、段ボール箱に詰まっていきます。',
+  },
+  {
+    slug: 'games',
+    name: 'MIRAI GAMES',
+    category: 'ゲーム会社',
+    type: 'GAME STUDIO',
+    image: 'studio',
+    color: '#1a1433',
+    title: 'サイトそのものが、\n遊べる一本目。',
+    description:
+      'ゲーム会社の公式サイト。トップがそのまま遊べるゲームで、作品一覧はソフトのパッケージ、採用はキャラクター選択画面。',
+    tags: ['遊べるトップ', 'タイトル一覧', '採用'],
+    note: 'トップの画面はそのまま遊べます。キーボードかタップで操作してください。',
+  },
 ];
 export type Project = (typeof projects)[number];

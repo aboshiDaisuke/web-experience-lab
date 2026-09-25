@@ -5,75 +5,132 @@ export const goals = [
   { id: '3d', label: '3Dで製品・空間を見せたい' },
   { id: 'estate', label: '物件を内覧で見せたい' },
   { id: 'photo', label: '写真で魅せたい' },
+  { id: 'shop', label: 'ネットで商品を売りたい' },
   { id: 'local', label: '地域のお店・公共施設' },
 ] as const;
 export type GoalId = (typeof goals)[number]['id'];
 
 export const workMeta: Record<
   string,
-  { goals: GoalId[]; built: string[] }
+  { goals: GoalId[]; built: string[]; tech: string[] }
 > = {
   nova: {
     goals: ['brand'],
     built: ['検査レンズで拡大（WebGL）', '2点間の寸法計測', '事業別の切り替え'],
+    tech: ['WebGL', 'GLSLシェーダー'],
   },
   lumina: {
     goals: ['brand', 'booking'],
     built: ['なでると髪が流れる（流体シェーダー）', 'スタイルギャラリー', '予約フォーム'],
+    tech: ['three.js', '流体シミュレーション'],
   },
   noir: {
     goals: ['booking', 'photo'],
     built: ['カーソルがろうそくの灯りに（WebGL）', '立ちのぼる湯気', 'コース別の予約'],
+    tech: ['three.js', 'GLSLシェーダー'],
   },
   eclat: {
     goals: ['brand', 'photo'],
     built: ['スクロールで縫われる革の縫い目', '立体的に傾くバッグ', 'カラー選択'],
+    tech: ['GSAP', 'スクロール演出'],
   },
   luce: {
     goals: ['estate', '3d', 'booking'],
     built: ['階数別の360°眺望', '歩いて見られる3Dモデルルーム', '間取りから内覧'],
+    tech: ['three.js', 'Blender', '360°パノラマ'],
   },
   aether: {
     goals: ['3d'],
     built: ['その場で鳴る生成サウンド', '音に反応する波紋', 'スクロールで分解する3D'],
+    tech: ['three.js', 'Web Audio'],
   },
   casa: {
     goals: ['estate', '3d', 'photo'],
     built: ['図面から建ち上がる外観', 'Blender製の住宅を歩いて内覧', 'スクロールで夕暮れから夜へ'],
+    tech: ['WebGL', 'Blender', '3D内覧'],
   },
   room: {
     goals: ['3d'],
     built: ['道具を選ぶと仕事を実演', 'コードからサイトが組み上がる', '3Dの部屋'],
+    tech: ['three.js', '3D空間'],
   },
   yui: {
     goals: ['photo', 'brand'],
     built: ['ネガから現像される写真', 'ファインダーで撮影', 'フィルムに残る撮影カット'],
+    tech: ['WebGL', 'Web Audio'],
   },
   adapt: {
     goals: ['3d', 'brand'],
     built: ['クリック地点から塗り替わる', 'スタイルごとの見出しの表情', 'WebGLオブジェクト'],
+    tech: ['three.js', 'インタラクション'],
   },
   offgrid: {
     goals: ['booking', 'photo'],
     built: ['通知の山を風が吹き飛ばす', 'タイムテーブル', 'チケット申込み'],
+    tech: ['GSAP', 'スクロール演出'],
   },
   drive: {
     goals: ['local', 'booking', '3d'],
     built: ['スクロールで夜の高速を走る（WebGL）', '標識が出口になるナビ', 'ローン試算と在庫検索'],
+    tech: ['three.js', 'GLSLシェーダー'],
   },
   yaoya: {
     goals: ['local', 'booking'],
     built: ['めくれる布ののれん', '野菜をかごへ放りこむ取り置き', 'チョークで書かれる黒板'],
+    tech: ['three.js', '布シミュレーション'],
   },
   library: {
     goals: ['local', 'brand'],
     built: ['本棚そのものが検索窓', '迫り出して開く本', '開館カレンダー'],
+    tech: ['CSS 3D', '蔵書検索'],
   },
   city: {
     goals: ['local', 'booking'],
     built: ['番号札で手続きを案内', '窓口までの道順', 'やさしい日本語・文字サイズ切替'],
+    tech: ['CSS 3D', 'アクセシビリティ'],
+  },
+  arc: {
+    goals: ['3d', 'brand', 'booking'],
+    built: ['Blender製の車を3Dで操作（WebGL）', '運転席に乗りこめる', '色・グレードと価格の試算'],
+    tech: ['three.js', 'Blender', 'PBR'],
+  },
+  goods: {
+    goals: ['shop', 'brand'],
+    built: ['品物が段ボール箱に詰まるカート（WebGL）', '箱の大きさで決まる送料', '購入手続き'],
+    tech: ['three.js', '物理演算'],
+  },
+  games: {
+    goals: ['brand', '3d'],
+    built: ['トップがそのまま遊べるゲーム（WebGL）', 'パッケージで並ぶタイトル', 'キャラ選択式の採用'],
+    tech: ['three.js', 'ゲーム制作'],
   },
 };
+
+// Top of the page: the works that show the craft at a glance.
+export const featured: { slug: string; pitch: string }[] = [
+  { slug: 'arc', pitch: 'Blenderで作った車を、ブラウザで回して、ドアを開けて、運転席に座る。' },
+  { slug: 'games', pitch: 'トップページが、そのまま遊べるゲーム。ソフトのパッケージは手に取って開ける。' },
+  { slug: 'goods', pitch: 'カートは段ボール箱。入れた品が落ちて詰まり、箱の大きさと送料がその場で決まる。' },
+];
+
+// Order of the works grid; the first nine show before 「すべて見る」.
+// The featured three sit in the showcase above, so they come after the first nine.
+export const workOrder = [
+  'drive', 'luce', 'yaoya', 'casa', 'lumina', 'noir', 'library', 'city', 'aether',
+  'arc', 'games', 'goods', 'nova', 'eclat', 'yui', 'room', 'adapt', 'offgrid',
+];
+
+// Shown as a ribbon under the featured works.
+export const techStack = [
+  'three.js / WebGL',
+  'GLSLシェーダー',
+  'Blender',
+  '物理シミュレーション',
+  'Web Audio',
+  'GSAP',
+  'React / Next.js',
+  'アクセシビリティ',
+];
 
 export const needs = [
   { id: 'all', label: 'すべて見る' },
@@ -266,7 +323,7 @@ export const services = [
   },
   {
     title: '触って|伝わる3D',
-    example: 'casa',
+    example: 'arc',
     body: '製品の分解、建物の内覧、空間の探索。言葉だけでは伝わりにくい魅力を、操作できる形で見せます。',
   },
   {

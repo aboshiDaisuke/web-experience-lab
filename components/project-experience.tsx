@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import {
   ArrowUpRight,
   ArrowRight,
@@ -31,6 +31,10 @@ import DriveSite from './works/drive-site';
 import YaoyaSite from './works/yaoya-site';
 import LibrarySite from './works/library-site';
 import CitySite from './works/city-site';
+// Loaded on demand so each new work compiles and ships on its own.
+const ArcSite = lazy(() => import('./works/arc-site'));
+const GoodsSite = lazy(() => import('./works/goods-site'));
+const GamesSite = lazy(() => import('./works/games-site'));
 import { Slider } from '@/components/ui/slider';
 import {
   Dialog,
@@ -118,6 +122,51 @@ const localSites: Record<
     contact: 'お問い合わせ',
     inquiry: '市役所へのお問い合わせ',
     closing: '用事がすむまで、ご案内します。',
+  },
+  arc: {
+    anchors: [
+      ['デザイン', 'design'],
+      ['インテリア', 'interior'],
+      ['グレード・価格', 'grades'],
+    ],
+    mark: (
+      <>
+        MIRAI ARC<span>ELECTRIC / 2027 MODEL</span>
+      </>
+    ),
+    contact: '試乗を予約',
+    inquiry: '試乗・見積りのご予約',
+    closing: 'つづきは、運転席で。',
+  },
+  goods: {
+    anchors: [
+      ['商品一覧', 'items'],
+      ['つくり手', 'makers'],
+      ['お届けについて', 'shipping'],
+    ],
+    mark: (
+      <>
+        MIRAI GOODS<span>暮らしの道具店</span>
+      </>
+    ),
+    contact: 'お問い合わせ',
+    inquiry: '商品についてのお問い合わせ',
+    closing: '箱を開ける日まで、丁寧に。',
+  },
+  games: {
+    anchors: [
+      ['タイトル', 'titles'],
+      ['ニュース', 'news'],
+      ['採用', 'recruit'],
+    ],
+    mark: (
+      <>
+        MIRAI GAMES<span>未来ゲームス</span>
+      </>
+    ),
+    contact: 'お問い合わせ',
+    inquiry: 'MIRAI GAMES へのお問い合わせ',
+    closing: 'CONTINUE? — つぎの一本を、いっしょに。',
   },
 };
 const tabs = ['信頼感', '高級感', '独創的', '未来的', '遊び心'];
@@ -1222,6 +1271,11 @@ export default function ProjectExperience({
       {p.slug === 'yaoya' && <YaoyaSite onInquiry={openLocalInquiry} />}
       {p.slug === 'library' && <LibrarySite onInquiry={openLocalInquiry} />}
       {p.slug === 'city' && <CitySite onInquiry={openLocalInquiry} />}
+      <Suspense fallback={<div className="work-loading" style={{ minHeight: '100svh' }} />}>
+        {p.slug === 'arc' && <ArcSite onInquiry={openLocalInquiry} />}
+        {p.slug === 'goods' && <GoodsSite onInquiry={openLocalInquiry} />}
+        {p.slug === 'games' && <GamesSite onInquiry={openLocalInquiry} />}
+      </Suspense>
       {p.slug === 'offgrid' && (
         <>
           <section id="top" className="offgrid-cover">
