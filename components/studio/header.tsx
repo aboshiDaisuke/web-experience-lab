@@ -22,9 +22,10 @@ export default function StudioHeader({ page }: { page: 'home' | 'guide' }) {
   const top = page === 'home' ? '' : HOME;
   return (
     <header className={`st-header ${solid ? 'is-solid' : ''}`}>
-      <a href={HOME} className="st-logo" aria-label="Web Experience Lab トップへ">
-        <b>W/E</b>
-        <span>Web Experience Lab</span>
+      <a href={HOME} className="st-logo" aria-label="未来技術研究所 デジタル広報支援サービス トップへ">
+        <i className="st-logo-mark" aria-hidden />
+        <b>未来技術研究所</b>
+        <span>DIGITAL PR SUPPORT</span>
       </a>
       <nav aria-label="サイト内">
         {homeNav.map(([label, hash]) => (
@@ -47,9 +48,10 @@ export function StudioFooter({ page }: { page: 'home' | 'guide' }) {
   const top = page === 'home' ? '' : HOME;
   return (
     <footer className="st-footer">
-      <a href={HOME} className="st-logo">
-        <b>W/E</b>
-        <span>Web Experience Lab</span>
+      <a href={HOME} className="st-logo" aria-label="未来技術研究所 デジタル広報支援サービス トップへ">
+        <i className="st-logo-mark" aria-hidden />
+        <b>未来技術研究所</b>
+        <span>DIGITAL PR SUPPORT</span>
       </a>
       <nav aria-label="フッター">
         {homeNav.map(([label, hash]) => (
@@ -60,7 +62,7 @@ export function StudioFooter({ page }: { page: 'home' | 'guide' }) {
         <a href={`${BASE}/guide`}>依頼ガイド</a>
         <a href="#contact">相談する</a>
       </nav>
-      <p>掲載作品のブランド・人物・価格はすべて架空の制作サンプルです。© 2026 Web Experience Lab</p>
+      <p>掲載作品のブランド・人物・価格はすべて架空の制作サンプルです。© 2026 未来技術研究所</p>
     </footer>
   );
 }

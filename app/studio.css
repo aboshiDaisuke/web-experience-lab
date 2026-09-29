@@ -78,22 +78,36 @@
   color: var(--ink);
   box-shadow: 0 1px 0 var(--line);
 }
+/* the logo is set like the splash's title card: the lab's name in heavy gothic, a vermilion
+   square, and DIGITAL PR SUPPORT spaced wide */
 .st-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-right: auto;
+}
+.st-logo-mark {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  background: #f2411b;
 }
 .st-logo b {
   font:
-    700 22px/1 var(--gothic),
+    900 19px/1 var(--gothic),
     sans-serif;
-  letter-spacing: -0.04em;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 .st-logo span {
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  opacity: 0.8;
+  padding-left: 12px;
+  border-left: 1px solid currentColor;
+  font:
+    700 11px/1.6 var(--gothic),
+    sans-serif;
+  letter-spacing: 0.2em;
+  white-space: nowrap;
+  opacity: 0.85;
 }
 .st-header nav {
   display: flex;
@@ -2257,9 +2271,10 @@ html:has(.studio) {
   text-shadow: 0 1px 10px rgba(3, 14, 16, 0.65);
 }
 
-/* splash: a typographic title sequence in paper white, ink black and one vermilion.
-   Flat colour, hard cuts, type sliding up out of masks. The motion lives in lib/splash.ts (GSAP);
-   this sheet sets the layout and the start states. */
+/* splash: a typographic title sequence in paper white, ink black and one vermilion, cut on the
+   beat of its track (lib/splash-sound.ts). Flat colour, hard cuts, type in masks: no glow, no
+   blur, no bounce. The motion lives in lib/splash.ts (GSAP); this sheet sets the layout and the
+   start states. */
 .st-splash {
   --bg: #f3f1ec;
   --fg: #111114;
@@ -2318,6 +2333,16 @@ html[data-splash='skip'] .sp-lead {
 .sp-rule.r {
   right: 20px;
 }
+.sp-cross {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
 .sp-corner {
   margin: 0;
   position: absolute;
@@ -2348,26 +2373,94 @@ html[data-splash='skip'] .sp-lead {
   right: 34px;
   font-variant-numeric: tabular-nums;
 }
-/* 未来 / 技術 / 研究所, struck one at a time at the size of the screen */
-.sp-words {
+/* bar 1: 未来 in slices, 技術 dropped, 研究所 run in as a row, one per beat */
+.sp-stage {
   position: absolute;
   inset: 0;
   display: grid;
+  grid-template: 100% / 100%;
   place-items: center;
 }
-.sp-word {
-  margin: 0;
+.sp-stage > * {
   grid-area: 1 / 1;
-  overflow: hidden;
+  margin: 0;
+}
+.sp-big {
   padding: 0.04em 0.02em 0.1em;
   font:
     900 min(31vw, 44vh) / 1 var(--gothic);
   letter-spacing: -0.02em;
   white-space: nowrap;
 }
-.sp-word span {
-  display: block;
+.sp-slice,
+.sp-row {
   visibility: hidden;
+}
+.sp-drop {
+  overflow: hidden;
+}
+.sp-drop span {
+  display: inline-block;
+  visibility: hidden;
+}
+/* far wider than the screen, so it sits outside the grid's sizing */
+.sp-row {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: flex;
+  gap: 0.4em;
+}
+.sp-row span {
+  flex: none;
+}
+/* beat 4: the name stuttered in 16ths, three ways, full bleed */
+.sp-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  visibility: hidden;
+}
+.sp-frame span {
+  display: block;
+  white-space: nowrap;
+}
+.sp-frame.f1 {
+  background: #111114;
+  color: #f3f1ec;
+  font:
+    900 min(13vw, 34vh) / 1 var(--gothic);
+  letter-spacing: -0.03em;
+}
+.sp-frame.f2 {
+  background: #f2411b;
+  color: #111114;
+  font:
+    900 min(12vh, 40vw) / 1 var(--gothic);
+  letter-spacing: -0.02em;
+  writing-mode: vertical-rl;
+}
+.sp-frame.f3 {
+  background: #f3f1ec;
+  color: #111114;
+  font:
+    700 clamp(18px, 2.4vw, 32px) / 1.5 var(--gothic);
+  letter-spacing: 0.6em;
+  text-align: center;
+}
+.sp-frame.f3 span {
+  margin-right: -0.6em;
+}
+.sp-frame.f3 small {
+  display: block;
+  margin-top: 0.8em;
+  font-size: 0.45em;
+  letter-spacing: 0.4em;
+  color: #f2411b;
 }
 /* the title: two lines, set left, each char rising out of its line's mask */
 .sp-title {
@@ -2392,6 +2485,11 @@ html[data-splash='skip'] .sp-lead {
 }
 .sp-line .em {
   color: var(--red);
+}
+/* the ー of サービス: the camera flies into it on beat 8 */
+.sp-line .bar {
+  position: relative;
+  z-index: 2;
 }
 .sp-sub {
   position: relative;
@@ -2455,7 +2553,6 @@ html[data-splash='skip'] .sp-lead {
   aspect-ratio: 16 / 10;
   overflow: hidden;
   background: #d9d6ce;
-  clip-path: inset(0 0 100% 0);
 }
 .sp-shot img {
   position: absolute;
@@ -2471,6 +2568,72 @@ html[data-splash='skip'] .sp-lead {
     700 clamp(16px, 1.6vw, 22px) / 1.3 var(--gothic);
   letter-spacing: 0.1em;
   min-height: 1.3em;
+}
+/* a hairline that fills as the works go past */
+.sp-meter {
+  position: relative;
+  height: 2px;
+  margin: 12px 0 0;
+  overflow: hidden;
+  background: rgba(127, 127, 127, 0.35);
+}
+.sp-meter i {
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+/* bar 4: 18, and all eighteen at once */
+.sp-final {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: clamp(24px, 4vw, 72px);
+  padding: 9vh clamp(34px, 6vw, 96px);
+  visibility: hidden;
+}
+.sp-n {
+  margin: 0;
+  overflow: hidden;
+  padding: 0.06em 0 0.1em;
+  font:
+    400 min(40vw, 62vh) / 0.86 'Anton', 'Impact', 'Arial Narrow', sans-serif;
+  letter-spacing: -0.01em;
+}
+.sp-n b {
+  display: block;
+  font-weight: 400;
+  visibility: hidden;
+}
+.sp-fcol {
+  min-width: 0;
+}
+.sp-mosaic {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: clamp(4px, 0.5vw, 8px);
+}
+.sp-mosaic img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top;
+  clip-path: inset(0 0 100% 0);
+}
+.sp-cap {
+  margin: 16px 0 0;
+  overflow: hidden;
+  font:
+    700 clamp(16px, 1.6vw, 22px) / 1.3 var(--gothic);
+  letter-spacing: 0.1em;
+}
+.sp-cap span {
+  display: block;
+  visibility: hidden;
 }
 .sp-ctrl {
   position: absolute;
@@ -2557,6 +2720,20 @@ html[data-splash='out'] .st-hero-canvas {
   .sp-ctrl {
     right: 34px;
     bottom: 70px;
+  }
+  .sp-final {
+    grid-template-columns: 1fr;
+    align-content: center;
+    padding: 12vh 34px;
+  }
+  .sp-fcol {
+    order: -1;
+  }
+  .sp-n {
+    font-size: min(46vw, 30vh);
+  }
+  .sp-frame.f2 {
+    font-size: min(10vh, 40vw);
   }
 }
 /* reduced motion: no motion, just the finished title, then a fade */

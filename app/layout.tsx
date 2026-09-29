@@ -19,7 +19,7 @@ import './signatures/city.css';
 import './tour.css';
 import { BASE } from '@/lib/base-path';
 export const metadata: Metadata = {
-  title: 'Web Experience Lab — 触れて伝わるWebサイト制作',
+  title: '未来技術研究所 — デジタル広報支援サービス',
   description:
     '3Dで乗りこめる新型車、箱詰めカートの通販、遊べるゲーム会社から、八百屋・図書館・市役所まで。ブラウザで実際に動く18の制作サンプルと、料金・制作の流れ・ご相談窓口。',
 };

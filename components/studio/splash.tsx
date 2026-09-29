@@ -4,9 +4,11 @@ import { projects } from '@/lib/portfolio';
 import { BASE } from '@/lib/base-path';
 import { createSplashSound } from '@/lib/splash-sound';
 
-const WORDS = ['未来', '技術', '研究所'];
+const ORG = '未来技術研究所';
+const SLICES = 6;
 const LINES = ['デジタル広報', '支援サービス'];
 const EM = new Set([4, 5]); // 広報, set in vermilion
+const BAR = 3; // the ー of サービス, which the camera flies into
 const TOTAL = projects.length;
 const ARIA = '未来技術研究所 デジタル広報支援サービス ウェブサイト ポートフォリオ';
 const MAX_MS = 10000; // never hold the page longer than this, even if the tank is still loading
@@ -139,6 +141,7 @@ export default function Splash() {
             {['t', 'b', 'l', 'r'].map((k) => (
               <i key={k} className={`sp-rule ${k}`} />
             ))}
+            <i className="sp-cross" />
             <p className="sp-corner tl">
               <span>未来技術研究所</span>
             </p>
@@ -153,18 +156,34 @@ export default function Splash() {
                 <b className="sp-cnt">00</b> / {TOTAL}
               </span>
             </p>
-            <div className="sp-words">
-              {WORDS.map((w) => (
-                <p key={w} className="sp-word">
-                  <span>{w}</span>
-                </p>
-              ))}
+            <div className="sp-stage">
+              {Array.from({ length: SLICES }, (_, i) => {
+                const h = 100 / SLICES;
+                return (
+                  <p
+                    key={i}
+                    className="sp-big sp-slice"
+                    style={{ clipPath: `inset(${Math.max(0, i * h - 0.2)}% 0 ${Math.max(0, (SLICES - 1 - i) * h - 0.2)}% 0)` }}
+                  >
+                    未来
+                  </p>
+                );
+              })}
+              <p className="sp-big sp-drop">
+                <span>技</span>
+                <span>術</span>
+              </p>
+              <p className="sp-big sp-row">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <span key={i}>研究所</span>
+                ))}
+              </p>
             </div>
             <div className="sp-title">
               {LINES.map((line, li) => (
                 <p key={line} className="sp-line">
                   {[...line].map((c, i) => (
-                    <span key={i} className={li === 0 && EM.has(i) ? 'em' : undefined}>
+                    <span key={i} className={li === 0 && EM.has(i) ? 'em' : li === 1 && i === BAR ? 'bar' : undefined}>
                       {c}
                     </span>
                   ))}
@@ -188,7 +207,37 @@ export default function Splash() {
                   ))}
                 </div>
                 <p className="sp-name" />
+                <p className="sp-meter">
+                  <i />
+                </p>
               </div>
+            </div>
+            <div className="sp-final">
+              <p className="sp-n">
+                <b>{TOTAL}</b>
+              </p>
+              <div className="sp-fcol">
+                <div className="sp-mosaic">
+                  {projects.map((p) => (
+                    <img key={p.slug} src={`${BASE}/images/works/${p.slug}-desktop.jpg`} alt="" decoding="async" />
+                  ))}
+                </div>
+                <p className="sp-cap">
+                  <span>WORKS — ブラウザで動く制作サンプル</span>
+                </p>
+              </div>
+            </div>
+            <div className="sp-frame f1">
+              <span>{ORG}</span>
+            </div>
+            <div className="sp-frame f2">
+              <span>{ORG}</span>
+            </div>
+            <div className="sp-frame f3">
+              <span>
+                {ORG}
+                <small>DIGITAL PR SUPPORT</small>
+              </span>
             </div>
           </div>
         </div>

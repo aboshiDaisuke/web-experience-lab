@@ -1441,7 +1441,7 @@ export default function ProjectExperience({
         <a className="work-consult" href={`${HOME}?ref=${p.slug}#contact`}>
           <img src={`${BASE}/images/works/${p.slug}-desktop.jpg`} alt="" />
           <span>
-            <small>Web Experience Lab の制作サンプルです</small>
+            <small>未来技術研究所の制作サンプルです</small>
             このテイストで制作を相談する
           </span>
           <ArrowUpRight size={18} />

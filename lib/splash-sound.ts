@@ -1,233 +1,413 @@
 // Sound for the splash, synthesised with Web Audio (no audio files): a short electronic title
-// track (125 BPM, D minor) with the effects tuned to it. Browsers keep an AudioContext silent
-// until the visitor acts on the page, so nothing sounds by default: the splash offers a
-// "音をつけて再生" button, and only after it is pressed do the cues below speak. Every cue is a
-// no-op while sound is off.
+// track at 128 BPM in D minor (Dm – F – B♭ – C), with every effect written into the score so it
+// lands on the beat grid that lib/splash.ts cuts the picture on. Browsers keep an AudioContext
+// silent until the visitor acts on the page, so nothing sounds by default: the splash offers a
+// "音をつけて再生" button, and only after it is pressed does the track play.
 //
-// The score is laid out on the beat grid (BEAT) so lib/splash.ts can cut the picture on it:
-//   bar 1  the three words are struck on beats 1-3, a riser builds through beats 3-4
-//   bar 2  the drop: kick, hats and clap under the title
-//   bar 3  the works are cut past under a driving bass and arpeggio, a snare roll into
-//   bar 4  the final hit, then a calmer loop until the splash leaves
+//   beat 0      a breath in: riser and a filtered pad
+//   bar 1       three stabs for 未来 / 技術 / 研究所, a 16th stutter on beat 4, then a gap
+//   bar 2       the drop: four on the floor, rolling bass, the title plucked in 32nds
+//   beat 8      a sweep into the zoom-through, the works start on the half beat
+//   bar 3       the works cut in 16ths over B♭ and C, a snare roll into
+//   bar 4       the final hit on Dm, then a half-time loop until the splash leaves
 
-export const BPM = 125;
-export const BEAT = 60 / BPM; // 0.48 s
+export const BPM = 128;
+export const BEAT = 60 / BPM; // 0.469 s
+const S16 = BEAT / 4;
 
 export type SplashSound = {
   readonly on: boolean;
   enable: () => Promise<boolean>;
   mute: () => void;
-  music: () => void; // start the track: bar 1 lands one beat after this call
-  musicStop: (fade?: number) => void;
-  draw: () => void; // hairlines drawn
-  slam: (pitch?: number) => void; // a word struck: thump plus a click (pitch is a ratio of D3)
-  whoosh: (dir?: 'up' | 'down', dur?: number, gain?: number) => void; // a wipe or cut
-  pluck: (step: number) => void; // one character rising, on the D minor pentatonic
-  tick: (t: number) => void; // a work cut past, t = 0..1 through the count
-  finale: () => void; // 18 WORKS lands
+  music: () => void; // start the track: beat 0 is the moment of the call
+  musicStop: (fade?: number) => void; // close the filter and fade out
   lift: () => void; // the curtain lifts
   dispose: () => void;
 };
 
-type Rig = { c: AudioContext; out: GainNode; bus: DynamicsCompressorNode; noise: AudioBuffer };
-
-const FLOOR = 0.0001;
-const STEP = BEAT / 4;
-const D3 = 146.83;
-const PENTA = [0, 3, 5, 7, 10]; // D F G A C
-const mtof = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
-
-// chords as MIDI notes: Dm9, Bb, C
-const DM = [50, 53, 57, 64];
-const BB = [46, 50, 53, 60];
-const CM = [48, 52, 55, 62];
-const ARP: Record<string, number[]> = {
-  dm: [62, 65, 69, 65, 74, 69, 65, 62],
-  bb: [70, 74, 77, 74, 82, 77, 74, 70],
-  c: [72, 76, 79, 76, 84, 79, 76, 72],
+type Mix = {
+  c: AudioContext;
+  noise: AudioBuffer;
+  drums: AudioNode; // not ducked
+  duck: GainNode; // synths, pumped by the kick
+  verb: AudioNode; // reverb send
+  echo: AudioNode; // ping-pong delay send
 };
 
-// a pitched voice with a fast attack and exponential decay, at absolute time t
-const osc = (a: Rig, d: AudioNode, type: OscillatorType, f0: number, f1: number, t: number, dur: number, peak: number) => {
-  const o = a.c.createOscillator();
-  const g = a.c.createGain();
+const FLOOR = 0.0001;
+const mtof = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
+
+// chords and bass roots, as MIDI notes
+const DM = [50, 53, 57, 62];
+const F = [53, 57, 60, 65];
+const BB = [46, 50, 53, 58];
+const C = [48, 52, 55, 60];
+const DM_WIDE = [38, 50, 57, 62, 65, 69];
+const TITLE = [62, 65, 67, 69, 72, 74, 77, 79, 81, 84, 86, 89]; // D minor pentatonic, upward
+
+// ---- voices ---------------------------------------------------------------------------------
+
+const envelope = (g: GainNode, t: number, peak: number, attack: number, dur: number, linear = false) => {
+  g.gain.setValueAtTime(FLOOR, t);
+  if (linear) g.gain.linearRampToValueAtTime(peak, t + attack);
+  else g.gain.exponentialRampToValueAtTime(peak, t + attack);
+  g.gain.exponentialRampToValueAtTime(FLOOR, t + dur);
+};
+
+const sends = (m: Mix, src: AudioNode, verb: number, echo: number) => {
+  if (verb) {
+    const s = m.c.createGain();
+    s.gain.value = verb;
+    src.connect(s);
+    s.connect(m.verb);
+  }
+  if (echo) {
+    const s = m.c.createGain();
+    s.gain.value = echo;
+    src.connect(s);
+    s.connect(m.echo);
+  }
+};
+
+const tone = (m: Mix, d: AudioNode, type: OscillatorType, f0: number, f1: number, t: number, dur: number, peak: number) => {
+  const o = m.c.createOscillator();
+  const g = m.c.createGain();
   o.type = type;
   o.frequency.setValueAtTime(f0, t);
   if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
-  g.gain.setValueAtTime(FLOOR, t);
-  g.gain.exponentialRampToValueAtTime(peak, t + 0.004);
-  g.gain.exponentialRampToValueAtTime(FLOOR, t + dur);
+  envelope(g, t, peak, 0.004, dur);
   o.connect(g);
   g.connect(d);
   o.start(t);
   o.stop(t + dur + 0.05);
+  return g;
 };
 
-// filtered noise: wind, hats, claps, a crash
-const hit = (a: Rig, d: AudioNode, kind: BiquadFilterType, f0: number, f1: number, t: number, dur: number, peak: number, q = 1, rise = 0.3, linear = false) => {
-  const s = a.c.createBufferSource();
-  const f = a.c.createBiquadFilter();
-  const g = a.c.createGain();
-  s.buffer = a.noise;
+const noise = (
+  m: Mix,
+  d: AudioNode,
+  kind: BiquadFilterType,
+  f0: number,
+  f1: number,
+  t: number,
+  dur: number,
+  peak: number,
+  q = 1,
+  rise = 0.02,
+  linear = false,
+  pan = 0,
+) => {
+  const s = m.c.createBufferSource();
+  const f = m.c.createBiquadFilter();
+  const g = m.c.createGain();
+  s.buffer = m.noise;
   f.type = kind;
   f.Q.value = q;
   f.frequency.setValueAtTime(f0, t);
-  f.frequency.exponentialRampToValueAtTime(f1, t + dur);
-  g.gain.setValueAtTime(FLOOR, t);
-  if (linear) g.gain.linearRampToValueAtTime(peak, t + Math.max(0.004, dur * rise));
-  else g.gain.exponentialRampToValueAtTime(peak, t + Math.max(0.004, dur * rise));
-  g.gain.exponentialRampToValueAtTime(FLOOR, t + dur);
+  if (f1 !== f0) f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  envelope(g, t, peak, Math.max(0.003, dur * rise), dur, linear);
   s.connect(f);
   f.connect(g);
-  g.connect(d);
-  s.start(t, Math.random() * 0.5);
+  if (pan) {
+    const p = m.c.createStereoPanner();
+    p.pan.value = pan;
+    g.connect(p);
+    p.connect(d);
+  } else g.connect(d);
+  s.start(t, Math.random() * 1.5);
   s.stop(t + dur + 0.05);
+  return g;
 };
 
-// a saw through a low-pass whose cutoff falls: bass notes, arp plucks, stabs
-const saw = (a: Rig, d: AudioNode, midi: number, t: number, dur: number, peak: number, cut0: number, cut1: number, sub = 0) => {
-  const f = mtof(midi);
-  const flt = a.c.createBiquadFilter();
-  const g = a.c.createGain();
-  flt.type = 'lowpass';
-  flt.Q.value = 4;
-  flt.frequency.setValueAtTime(cut0, t);
-  flt.frequency.exponentialRampToValueAtTime(cut1, t + dur);
-  g.gain.setValueAtTime(FLOOR, t);
-  g.gain.exponentialRampToValueAtTime(peak, t + 0.006);
-  g.gain.exponentialRampToValueAtTime(FLOOR, t + dur);
-  const o = a.c.createOscillator();
-  o.type = 'sawtooth';
-  o.frequency.value = f;
-  o.connect(flt);
-  flt.connect(g);
+// a stack of detuned saws, spread across the stereo field, through a closing low-pass
+const saws = (
+  m: Mix,
+  d: AudioNode,
+  notes: number[],
+  t: number,
+  dur: number,
+  peak: number,
+  cut0: number,
+  cut1: number,
+  opts: { attack?: number; verb?: number; echo?: number; spread?: number; q?: number } = {},
+) => {
+  const { attack = 0.006, verb = 0, echo = 0, spread = 1, q = 2 } = opts;
+  const f = m.c.createBiquadFilter();
+  const g = m.c.createGain();
+  f.type = 'lowpass';
+  f.Q.value = q;
+  f.frequency.setValueAtTime(cut0, t);
+  f.frequency.exponentialRampToValueAtTime(cut1, t + dur);
+  envelope(g, t, peak, attack, dur, attack > 0.05);
+  f.connect(g);
   g.connect(d);
-  o.start(t);
-  o.stop(t + dur + 0.05);
-  if (sub) osc(a, d, 'sine', f, f, t, dur, sub);
-};
-
-// a slow pad: detuned saws under a low-pass, swelling in and out
-const pad = (a: Rig, d: AudioNode, midis: number[], t: number, dur: number, peak: number) => {
-  const flt = a.c.createBiquadFilter();
-  const g = a.c.createGain();
-  flt.type = 'lowpass';
-  flt.frequency.setValueAtTime(500, t);
-  flt.frequency.exponentialRampToValueAtTime(1600, t + dur * 0.7);
-  g.gain.setValueAtTime(FLOOR, t);
-  g.gain.exponentialRampToValueAtTime(peak, t + 0.25);
-  g.gain.setValueAtTime(peak, t + Math.max(0.26, dur - 0.3));
-  g.gain.exponentialRampToValueAtTime(FLOOR, t + dur);
-  flt.connect(g);
-  g.connect(d);
-  for (const m of midis)
-    for (const det of [-7, 7]) {
-      const o = a.c.createOscillator();
+  sends(m, g, verb, echo);
+  const voices = spread > 0 ? [-16, -6, 6, 16] : [0];
+  for (const n of notes)
+    voices.forEach((det, i) => {
+      const o = m.c.createOscillator();
+      const p = m.c.createStereoPanner();
       o.type = 'sawtooth';
-      o.frequency.value = mtof(m);
-      o.detune.value = det;
-      o.connect(flt);
+      o.frequency.value = mtof(n);
+      o.detune.value = det * spread;
+      p.pan.value = voices.length > 1 ? (i / (voices.length - 1) - 0.5) * 1.4 * spread : 0;
+      o.connect(p);
+      p.connect(f);
       o.start(t);
       o.stop(t + dur + 0.05);
-    }
+    });
+  return g;
 };
 
 export function createSplashSound(): SplashSound {
   let ctx: AudioContext | null = null;
   let out: GainNode | null = null;
-  let bus: DynamicsCompressorNode | null = null;
-  let noise: AudioBuffer | null = null;
+  let noiseBuf: AudioBuffer | null = null;
   let on = false;
   let timer = 0;
-  let mus: GainNode | null = null;
+  let live: { level: GainNode; tone: BiquadFilterNode; mix: Mix } | null = null;
 
-  const rig = (): Rig | null => (on && ctx && out && bus && noise && ctx.state === 'running' ? { c: ctx, out, bus, noise } : null);
+  const running = () => on && !!ctx && !!out && !!noiseBuf && ctx.state === 'running';
 
-  // ---- the track --------------------------------------------------------------------------
-  const kick = (a: Rig, d: AudioNode, t: number, g = 1) => {
-    osc(a, d, 'sine', 150, 42, t, 0.28, 0.95 * g);
-    hit(a, d, 'highpass', 3000, 3000, t, 0.015, 0.25 * g, 0.7, 0.1);
+  // ---- the kit --------------------------------------------------------------------------------
+  const kick = (m: Mix, t: number, g = 1) => {
+    tone(m, m.drums, 'sine', 180, 44, t, 0.36, 0.95 * g);
+    tone(m, m.drums, 'triangle', 90, 40, t, 0.14, 0.35 * g);
+    noise(m, m.drums, 'highpass', 3500, 3500, t, 0.012, 0.3 * g, 0.7);
+    // side-chain: the synths duck under every kick and swell back
+    m.duck.gain.setValueAtTime(0.2, t);
+    m.duck.gain.linearRampToValueAtTime(1, t + 0.24);
   };
-  const hat = (a: Rig, d: AudioNode, t: number, g: number, open = false) =>
-    hit(a, d, 'highpass', 7500, 7500, t, open ? 0.2 : 0.045, 0.15 * g, 0.7, 0.05);
-  const clap = (a: Rig, d: AudioNode, t: number, g: number) => {
-    hit(a, d, 'bandpass', 1500, 1500, t - 0.012, 0.05, 0.2 * g, 0.8, 0.1);
-    hit(a, d, 'bandpass', 1500, 1300, t, 0.14, 0.34 * g, 0.8, 0.05);
+  const snare = (m: Mix, t: number, g = 1) => {
+    tone(m, m.drums, 'triangle', 200, 150, t, 0.11, 0.35 * g);
+    const n = noise(m, m.drums, 'bandpass', 2200, 1600, t, 0.2, 0.42 * g, 0.7);
+    sends(m, n, 0.25, 0);
   };
-  const riser = (a: Rig, d: AudioNode, t: number, dur: number, g: number) => {
-    hit(a, d, 'bandpass', 300, 8000, t, dur, 0.2 * g, 1.2, 0.95, true);
-    osc(a, d, 'sine', 180, 1500, t + dur * 0.5, dur * 0.5, 0.05 * g);
+  const clap = (m: Mix, t: number, g = 1) => {
+    [-0.022, -0.011, 0].forEach((o, i) => noise(m, m.drums, 'bandpass', 1400, 1400, t + o, i === 2 ? 0.16 : 0.03, 0.34 * g, 0.9));
+    sends(m, noise(m, m.drums, 'bandpass', 1400, 1100, t, 0.3, 0.12 * g, 0.9), 0.5, 0);
+  };
+  const hat = (m: Mix, t: number, g: number, open = false, pan = 0) =>
+    noise(m, m.drums, 'highpass', 8000, 8000, t, open ? 0.22 : 0.04, 0.17 * g, 0.7, 0.02, false, pan);
+  const crash = (m: Mix, t: number, g = 1) => {
+    const n = noise(m, m.drums, 'highpass', 4200, 6000, t, 2.2, 0.2 * g, 0.5);
+    sends(m, n, 0.35, 0);
+  };
+  const riser = (m: Mix, t: number, dur: number, g = 1) => {
+    noise(m, m.drums, 'bandpass', 250, 9000, t, dur, 0.22 * g, 1.3, 0.96, true);
+    const o = m.c.createOscillator();
+    const gg = m.c.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(110, t);
+    o.frequency.exponentialRampToValueAtTime(880, t + dur);
+    gg.gain.setValueAtTime(FLOOR, t);
+    gg.gain.linearRampToValueAtTime(0.03 * g, t + dur * 0.96);
+    gg.gain.linearRampToValueAtTime(FLOOR, t + dur);
+    o.connect(gg);
+    gg.connect(m.duck);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+  };
+  const subDrop = (m: Mix, t: number, g = 1) => tone(m, m.drums, 'sine', 110, 30, t, 1.3, 0.55 * g);
+  const bass = (m: Mix, note: number, t: number, dur: number, g = 1) => {
+    saws(m, m.duck, [note], t, dur, 0.2 * g, 1100, 180, { spread: 0.4, q: 5 });
+    tone(m, m.duck, 'sine', mtof(note), mtof(note), t, dur, 0.34 * g);
+  };
+  const pluck = (m: Mix, note: number, t: number, g = 1) => {
+    const f = mtof(note);
+    const a = tone(m, m.duck, 'triangle', f, f, t, 0.24, 0.07 * g);
+    const b = tone(m, m.duck, 'square', f * 2, f * 2, t, 0.06, 0.012 * g);
+    sends(m, a, 0.3, 0.35);
+    sends(m, b, 0, 0.3);
+  };
+  const tick = (m: Mix, t: number, k: number) => {
+    const f = 1400 + k * 90;
+    tone(m, m.drums, 'triangle', f, f * 0.5, t, 0.03, 0.1);
+    noise(m, m.drums, 'bandpass', 3200 + k * 150, 3200 + k * 150, t, 0.018, 0.2, 6, 0.1, false, k % 2 ? 0.5 : -0.5);
   };
 
-  const playStep = (a: Rig, d: AudioNode, step: number, t: number) => {
-    const bar = Math.floor(step / 16);
-    const s = step % 16;
-    const offbeat = s % 4 === 2;
-    if (bar === 0) {
-      if (s === 0) {
-        pad(a, d, [38, 45, 50], t, BEAT * 4 + 0.05, 0.05); // a low drone under the three words
+  // ---- the score, one 16th at a time (step 0 = beat 0) -------------------------------------
+  const play = (m: Mix, s: number, t: number) => {
+    const b = Math.floor(s / 4); // beat
+    const q = s % 4; // 16th within the beat
+
+    // beat 0: a breath in
+    if (s === 0) {
+      riser(m, t, BEAT, 0.7);
+      saws(m, m.duck, DM, t, BEAT * 4.75, 0.022, 300, 1400, { attack: 0.4, verb: 0.3 });
+      tone(m, m.duck, 'sine', mtof(38), mtof(38), t, BEAT * 4.75, 0.16);
+    }
+
+    // bar 1 (beats 1-4): three stabs, a building hat, a 16th stutter, then a gap
+    if (b >= 1 && b <= 3 && q === 0) {
+      kick(m, t, 1);
+      subDrop(m, t, 0.5);
+      saws(m, m.duck, [DM, F, BB][b - 1], t, 0.42, 0.075, 5200, 500, { verb: 0.45 });
+      bass(m, [38, 41, 34][b - 1], t, 0.4, 0.9);
+    }
+    if (b >= 1 && b <= 3) hat(m, t, 0.2 + (s - 4) * 0.03, false, q % 2 ? 0.35 : -0.35);
+    if (s === 8) riser(m, t, BEAT * 2.75, 1);
+    if (b === 4 && q < 3) {
+      snare(m, t, 0.5 + q * 0.25);
+      saws(m, m.duck, C, t, 0.1, 0.06 + q * 0.015, 6000, 1200, { verb: 0.2 });
+      if (q === 0) kick(m, t, 0.8);
+    }
+    // step 19 is the gap: nothing sounds
+
+    // bar 2 (beats 5-8): the drop
+    if (s === 20) {
+      kick(m, t, 1.15);
+      crash(m, t, 1);
+      subDrop(m, t, 1);
+      saws(m, m.duck, DM, t, BEAT * 3, 0.03, 700, 2400, { attack: 0.08, verb: 0.35 });
+      TITLE.forEach((n, i) => pluck(m, n, t + i * (BEAT / 8), 0.8 + i * 0.03));
+    }
+    if (b >= 5 && b <= 8) {
+      if (q === 0 && s !== 20) kick(m, t, 1);
+      if (q === 2) hat(m, t, 0.75, true, 0.2);
+      else hat(m, t, 0.28, false, q === 1 ? -0.4 : 0.4);
+      if ((b === 6 || b === 8) && q === 0) clap(m, t, 1);
+      if (b <= 7 && q !== 0) bass(m, 38, t, 0.12, q === 2 ? 1 : 0.8);
+      if (b <= 7 && q === 2) saws(m, m.duck, DM, t, 0.14, 0.03, 4200, 900, { verb: 0.15, echo: 0.2 });
+    }
+    if (s === 26) noise(m, m.drums, 'bandpass', 600, 5000, t, 0.4, 0.14, 1, 0.8, true);
+    if (s === 27) {
+      pluck(m, 81, t, 1.1);
+      pluck(m, 86, t + BEAT / 8, 1.1);
+    }
+    // beat 8: into the zoom-through, the works start on 8.5
+    if (s === 32) noise(m, m.drums, 'bandpass', 300, 7000, t, BEAT / 2, 0.3, 1.2, 0.97, true);
+
+    // works: one click per cut, 16ths from beat 8.5 (18 of them)
+    if (s >= 34 && s <= 51) tick(m, t, s - 34);
+
+    // bar 3 (beats 9-12): B♭ then C, driving 16th bass and an echoing arp
+    if (s === 34) {
+      kick(m, t, 0.9);
+      crash(m, t, 0.6);
+    }
+    if (b >= 9 && b <= 12) {
+      const chord = b <= 10 ? BB : C;
+      const root = b <= 10 ? 34 : 36;
+      if (s === 36 || s === 44) saws(m, m.duck, chord, t, BEAT * 2, 0.028, 800, 3000, { attack: 0.05, verb: 0.3 });
+      if (q === 0) kick(m, t, 1);
+      if ((b === 10 || b === 12) && q === 0) clap(m, t, 1);
+      hat(m, t, q === 2 ? 0.8 : 0.35, q === 2, q % 2 ? -0.4 : 0.4);
+      if (q !== 0) bass(m, root + (q === 2 ? 12 : 0), t, 0.1, 0.9);
+      const arp = [chord[3] + 12, chord[1] + 12, chord[2] + 12, chord[3] + 24];
+      pluck(m, arp[q], t, 0.55);
+    }
+    if (s === 44) riser(m, t, BEAT * 2, 1);
+    if (b === 12) {
+      snare(m, t, 0.4 + q * 0.2);
+      snare(m, t + S16 / 2, 0.3 + q * 0.2);
+    }
+
+    // bar 4 (beat 13): the final hit on Dm, then a half-time loop
+    if (s === 52) {
+      kick(m, t, 1.25);
+      crash(m, t, 1.3);
+      subDrop(m, t, 1.2);
+      saws(m, m.duck, DM_WIDE, t, 2.4, 0.06, 6500, 400, { verb: 0.6, echo: 0.15 });
+      bass(m, 38, t, 1.2, 1);
+    }
+    if (b >= 13) {
+      const bar = (s - 52) % 16;
+      if (bar === 0 && s !== 52) {
+        kick(m, t, 0.9);
+        saws(m, m.duck, DM, t, BEAT * 4, 0.022, 600, 1800, { attack: 0.1, verb: 0.35 });
       }
-      if (offbeat) hat(a, d, t, 0.5);
-      if (s === 8) riser(a, d, t, STEP * 8, 0.6);
-      if (s === 14) clap(a, d, t, 0.3);
-      if (s === 15) clap(a, d, t, 0.4);
-    } else if (bar === 1) {
-      // the drop, under the title
-      if (s === 0) {
-        hit(a, d, 'highpass', 5000, 5000, t, 1.4, 0.22, 0.7, 0.02);
-        pad(a, d, DM, t, BEAT * 4 + 0.1, 0.03);
+      if (bar === 8) {
+        kick(m, t, 0.7);
+        snare(m, t, 0.8);
       }
-      if (s % 4 === 0) kick(a, d, t, 1);
-      if (offbeat) hat(a, d, t, 0.7);
-      else if (s % 2 === 1) hat(a, d, t, 0.2);
-      if (s === 4 || s === 12) clap(a, d, t, 0.8);
-      const bassAt: Record<number, number> = { 0: 38, 3: 38, 6: 41, 8: 38, 11: 38, 14: 36 };
-      if (bassAt[s]) saw(a, d, bassAt[s], t, 0.22, 0.32, 700, 200, 0.28);
-    } else if (bar === 2) {
-      // the works: full drive, a snare roll into the finish
-      const first = s < 8;
-      const root = first ? 34 : 36;
-      const arp = first ? ARP.bb : ARP.c;
-      if (s === 0) {
-        pad(a, d, BB, t, BEAT * 2 + 0.05, 0.03);
-        riser(a, d, t, BEAT * 4, 0.55);
-      }
-      if (s === 8) pad(a, d, CM, t, BEAT * 2 + 0.05, 0.03);
-      if (s % 4 === 0 || s === 14) kick(a, d, t, s === 14 ? 0.6 : 1);
-      hat(a, d, t, offbeat ? 0.8 : s % 2 ? 0.25 : 0.4);
-      if (s === 4 || s === 12) clap(a, d, t, 0.8);
-      if (s >= 13) clap(a, d, t, 0.15 + (s - 12) * 0.1);
-      if (s % 2 === 0) saw(a, d, root + (s % 8 === 6 ? 12 : 0), t, 0.16, 0.3, 800, 220, 0.24);
-      saw(a, d, arp[s % 8] + 0, t, 0.15, 0.06, 3600, 900);
-    } else {
-      // bar 4 onward: the final hit, then a calmer loop
-      if (bar === 3 && s === 0) {
-        hit(a, d, 'highpass', 5000, 5000, t, 1.6, 0.3, 0.7, 0.02);
-        kick(a, d, t, 1.15);
-        for (const m of [50, 53, 57, 62, 64]) saw(a, d, m, t, 1.9, 0.05, 3200, 500);
-        saw(a, d, 38, t, 1.9, 0.32, 900, 200, 0.3);
-      }
-      if (s === 0) pad(a, d, DM, t, BEAT * 4 + 0.1, 0.025);
-      if (s === 8) kick(a, d, t, bar === 3 ? 0.5 : 0.45);
-      if (bar > 3 && s === 0) kick(a, d, t, 0.5);
-      if (offbeat) hat(a, d, t, 0.35);
-      if (bar > 3 && (s === 6 || s === 10)) saw(a, d, 38, t, 0.2, 0.22, 600, 200, 0.2);
+      if (bar % 2 === 0) hat(m, t, bar % 4 === 2 ? 0.5 : 0.2, bar % 4 === 2, 0.3);
+      if (s > 52 && (bar === 0 || bar === 6 || bar === 10)) bass(m, 38, t, 0.18, 0.8);
+      if (bar === 14) pluck(m, [74, 77, 81, 79][Math.floor((s - 52) / 16) % 4], t, 0.7);
     }
   };
 
   const stopMusic = (fade = 0.6) => {
     window.clearInterval(timer);
     timer = 0;
-    const m = mus;
-    mus = null;
-    const c = ctx;
-    if (m && c) {
-      const t = c.currentTime;
-      m.gain.cancelScheduledValues(t);
-      m.gain.setValueAtTime(m.gain.value, t);
-      m.gain.linearRampToValueAtTime(0.0001, t + Math.max(0.05, fade));
-      window.setTimeout(() => m.disconnect(), fade * 1000 + 200);
+    const l = live;
+    live = null;
+    if (!l || !ctx) return;
+    const t = ctx.currentTime;
+    const f = Math.max(0.05, fade);
+    // close the filter as it fades, like the track is pulled away
+    l.tone.frequency.cancelScheduledValues(t);
+    l.tone.frequency.setValueAtTime(l.tone.frequency.value, t);
+    l.tone.frequency.exponentialRampToValueAtTime(160, t + f);
+    l.level.gain.cancelScheduledValues(t);
+    l.level.gain.setValueAtTime(l.level.gain.value, t);
+    l.level.gain.linearRampToValueAtTime(FLOOR, t + f);
+    window.setTimeout(() => l.level.disconnect(), f * 1000 + 3000);
+  };
+
+  // builds a fresh mix for one playthrough: drums and synths → tone filter → level → out
+  const build = (c: AudioContext, dest: AudioNode, nb: AudioBuffer) => {
+    const level = c.createGain();
+    level.gain.value = 0.78;
+    level.connect(dest);
+    const tone = c.createBiquadFilter();
+    tone.type = 'lowpass';
+    tone.frequency.value = 18000;
+    tone.connect(level);
+    const drums = c.createGain();
+    drums.connect(tone);
+    const duck = c.createGain();
+    duck.connect(tone);
+
+    // reverb: a generated stereo impulse, 2.4 s of decaying noise
+    const verb = c.createConvolver();
+    const len = Math.floor(c.sampleRate * 2.4);
+    const ir = c.createBuffer(2, len, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
     }
+    verb.buffer = ir;
+    const verbIn = c.createGain();
+    const verbHp = c.createBiquadFilter();
+    verbHp.type = 'highpass';
+    verbHp.frequency.value = 350;
+    verbIn.connect(verbHp);
+    verbHp.connect(verb);
+    const verbOut = c.createGain();
+    verbOut.gain.value = 0.5;
+    verb.connect(verbOut);
+    verbOut.connect(tone);
+
+    // ping-pong delay, a dotted eighth each side
+    const echoIn = c.createGain();
+    const dl = c.createDelay(1);
+    const dr = c.createDelay(1);
+    dl.delayTime.value = dr.delayTime.value = BEAT * 0.75;
+    const fb = c.createGain();
+    fb.gain.value = 0.38;
+    const damp = c.createBiquadFilter();
+    damp.type = 'lowpass';
+    damp.frequency.value = 3800;
+    const pl = c.createStereoPanner();
+    const pr = c.createStereoPanner();
+    pl.pan.value = -0.8;
+    pr.pan.value = 0.8;
+    echoIn.connect(dl);
+    dl.connect(pl);
+    dl.connect(dr);
+    dr.connect(pr);
+    dr.connect(damp);
+    damp.connect(fb);
+    fb.connect(dl);
+    const echoOut = c.createGain();
+    echoOut.gain.value = 0.55;
+    pl.connect(echoOut);
+    pr.connect(echoOut);
+    echoOut.connect(duck);
+
+    const mix: Mix = { c, noise: nb, drums, duck, verb: verbIn, echo: echoIn };
+    return { level, tone, mix };
   };
 
   const dispose = () => {
@@ -236,13 +416,9 @@ export function createSplashSound(): SplashSound {
     const c = ctx;
     ctx = null;
     out = null;
-    bus = null;
-    noise = null;
+    noiseBuf = null;
     if (c) window.setTimeout(() => void c.close().catch(() => {}), 1500);
   };
-
-  // effects, at "now"
-  const at = (a: Rig, delay = 0) => a.c.currentTime + 0.01 + delay;
 
   return {
     get on() {
@@ -253,19 +429,20 @@ export function createSplashSound(): SplashSound {
         if (!ctx) {
           const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
           if (!AC) return false;
-          ctx = new AC();
-          bus = ctx.createDynamicsCompressor();
-          bus.threshold.value = -16;
-          bus.ratio.value = 6;
-          bus.attack.value = 0.003;
-          bus.release.value = 0.15;
+          ctx = new AC({ latencyHint: 'interactive' });
+          const bus = ctx.createDynamicsCompressor();
+          bus.threshold.value = -14;
+          bus.knee.value = 6;
+          bus.ratio.value = 4;
+          bus.attack.value = 0.004;
+          bus.release.value = 0.12;
           bus.connect(ctx.destination);
           out = ctx.createGain();
-          out.gain.value = 0.7;
+          out.gain.value = 0.8;
           out.connect(bus);
           const len = ctx.sampleRate * 2;
-          noise = ctx.createBuffer(1, len, ctx.sampleRate);
-          const d = noise.getChannelData(0);
+          noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+          const d = noiseBuf.getChannelData(0);
           for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
         }
         await ctx.resume();
@@ -277,82 +454,36 @@ export function createSplashSound(): SplashSound {
     },
     mute() {
       on = false;
-      stopMusic(0.15);
+      stopMusic(0.2);
     },
     music() {
-      const a = rig();
-      if (!a) return;
+      if (!running()) return;
+      const c = ctx!;
       stopMusic(0.1);
-      const m = a.c.createGain();
-      m.gain.value = 0.55;
-      m.connect(a.bus);
-      mus = m;
-      const t0 = a.c.currentTime + BEAT - 0.02; // the downbeat of bar 1 (called 0.02 s into the splash)
-      riser(a, m, a.c.currentTime + 0.02, BEAT, 0.35); // a breath in before it
+      const l = build(c, out!, noiseBuf!);
+      live = l;
+      // beat 0 is now; hear it now, allowing for the time the output takes to reach the ear
+      const lag = (c as AudioContext & { outputLatency?: number }).outputLatency || c.baseLatency || 0;
+      const t0 = c.currentTime + 0.03 - Math.min(lag, 0.02);
       let step = 0;
       const run = () => {
-        const r = rig();
-        if (!r || mus !== m) return;
-        while (t0 + step * STEP < r.c.currentTime + 0.3) {
-          playStep(r, m, step, t0 + step * STEP);
+        if (!running() || live !== l) return;
+        while (t0 + step * S16 < c.currentTime + 0.25) {
+          play(l.mix, step, t0 + step * S16);
           step++;
         }
       };
-      timer = window.setInterval(run, 40);
+      timer = window.setInterval(run, 30);
       run();
     },
     musicStop: stopMusic,
-    draw() {
-      const a = rig();
-      if (!a) return;
-      const t = at(a);
-      hit(a, a.out, 'bandpass', 200, 4200, t, 0.7, 0.16, 0.9, 0.5);
-      osc(a, a.out, 'sine', 293.66, 1174.66, t, 0.55, 0.05);
-    },
-    slam(pitch = 1) {
-      const a = rig();
-      if (!a) return;
-      const t = at(a);
-      osc(a, a.out, 'sine', D3 * pitch, 46, t, 0.3, 0.95);
-      osc(a, a.out, 'triangle', (D3 / 2) * pitch, 40, t, 0.22, 0.3);
-      hit(a, a.out, 'highpass', 2600, 2600, t, 0.06, 0.32, 0.7, 0.05);
-    },
-    whoosh(dir = 'up', dur = 0.3, gain = 0.32) {
-      const a = rig();
-      if (!a) return;
-      hit(a, a.out, 'bandpass', dir === 'up' ? 300 : 3200, dir === 'up' ? 3200 : 300, at(a), dur, gain, 0.9, 0.4);
-    },
-    pluck(step: number) {
-      const a = rig();
-      if (!a) return;
-      const t = at(a);
-      const semis = PENTA[step % 5] + 12 * Math.floor(step / 5);
-      const f = 587.33 * Math.pow(2, semis / 12); // D5 upward
-      osc(a, a.out, 'triangle', f, f, t, 0.2, 0.07);
-      osc(a, a.out, 'sine', f * 2, f * 2, t, 0.12, 0.025);
-    },
-    tick(t: number) {
-      const a = rig();
-      if (!a) return;
-      const n = at(a);
-      const f = 900 + t * 1800;
-      osc(a, a.out, 'triangle', f, f * 0.55, n, 0.035, 0.12);
-      hit(a, a.out, 'bandpass', 2000 + t * 3000, 2000 + t * 3000, n, 0.02, 0.22, 6, 0.1);
-    },
-    finale() {
-      const a = rig();
-      if (!a) return;
-      const t = at(a);
-      osc(a, a.out, 'sine', 73.42, 32, t, 0.9, 1);
-      hit(a, a.out, 'bandpass', 6000, 800, t, 0.7, 0.24, 0.8, 0.1);
-      [587.33, 698.46, 880].forEach((f, i) => osc(a, a.out, 'sine', f, f, t + 0.05 + i * 0.06, 1.3, 0.08));
-    },
     lift() {
-      const a = rig();
-      if (!a) return;
-      const t = at(a);
-      hit(a, a.out, 'bandpass', 300, 2400, t, 0.9, 0.38, 0.7, 0.5);
-      osc(a, a.out, 'sine', 60, 220, t, 0.8, 0.22);
+      if (!running()) return;
+      const c = ctx!;
+      const m: Mix = { c, noise: noiseBuf!, drums: out!, duck: c.createGain(), verb: out!, echo: out! };
+      const t = c.currentTime + 0.01;
+      noise(m, out!, 'bandpass', 300, 3000, t, 0.9, 0.3, 0.7, 0.55, true);
+      tone(m, out!, 'sine', 55, 220, t, 0.8, 0.2);
     },
     dispose,
   };
