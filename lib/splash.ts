@@ -1,210 +1,158 @@
 import gsap from 'gsap';
+import { BEAT, type SplashSound } from '@/lib/splash-sound';
 
-// Kinetic-type opening for the top page, cut like a motion-graphics title:
-// shock ring → three words slammed in → service name bounces in and dances →
-// WEBSITE PORTFOLIO flips up behind a wipe → works counter → 18 WORKS punch.
-// The exit scatters the type and opens an iris onto the page.
+// Title sequence for the top page, cut like a typographic opening: hairlines draw a frame →
+// 未来 / 技術 / 研究所 struck one after another at screen size, the colour cutting between them →
+// デジタル広報支援サービス rises out of masks, set left → the works cut past at the speed of
+// the counter, each one the real screen → 18 WORKS. The exit lifts a curtain, a vermilion
+// strip trailing behind it. Flat colour and hard cuts only: no glow, no blur, no bounce.
 
-export type SplashEls = {
-  root: HTMLElement;
-  stage: HTMLElement;
-  ring: HTMLElement;
-  rays: HTMLElement[];
-  bigs: HTMLElement[];
-  org: HTMLElement[];
-  service: HTMLElement[];
-  bar: HTMLElement;
-  kind: HTMLElement[];
-  num: HTMLElement;
-  name: HTMLElement;
-  count: HTMLElement;
-  dots: HTMLElement[];
-  flash: HTMLElement;
-};
+const PAPER = '#f3f1ec';
+const INK = '#111114';
+const RED = '#f2411b';
 
-const rand = gsap.utils.random;
+export function playSplash(root: HTMLElement, names: string[], onTitleDone: () => void, sfx: SplashSound) {
+  const qa = (s: string) => [...root.querySelectorAll<HTMLElement>(s)];
+  const q = (s: string) => root.querySelector<HTMLElement>(s)!;
+  const rules = qa('.sp-rule');
+  const corners = qa('.sp-corner span');
+  const words = qa('.sp-word');
+  const wordIn = words.map((w) => w.firstElementChild as HTMLElement);
+  const lines = qa('.sp-line');
+  const chars = lines.map((l) => [...l.querySelectorAll<HTMLElement>('span')]);
+  const sub = q('.sp-sub');
+  const subIn = qa('.sp-sub > span > i');
+  const works = q('.sp-works');
+  const num = q('.sp-num');
+  const name = q('.sp-name');
+  const shotBox = q('.sp-shot');
+  const shotCol = q('.sp-shotcol');
+  const shots = qa('.sp-shot img');
+  const cnt = q('.sp-cnt');
+  const lead = document.querySelector<HTMLElement>('.sp-lead');
 
-export function playSplash(el: SplashEls, names: string[], onTitleDone: () => void) {
-  const shake = (at: number, power = 10) =>
-    tl.fromTo(
-      el.stage,
-      { x: 0, y: 0 },
-      {
-        keyframes: [
-          { x: -power, y: power * 0.4, duration: 0.04 },
-          { x: power * 0.8, y: -power * 0.5, duration: 0.04 },
-          { x: -power * 0.5, y: power * 0.3, duration: 0.04 },
-          { x: power * 0.25, y: 0, duration: 0.04 },
-          { x: 0, y: 0, duration: 0.05 },
-        ],
-        immediateRender: false,
-      },
-      at,
-    );
-  const flash = (at: number, peak = 0.55) =>
-    tl.fromTo(el.flash, { opacity: peak }, { opacity: 0, duration: 0.35, ease: 'power2.out', immediateRender: false }, at);
+  const theme = (at: number, bg: string, fg: string) => tl.set(root, { '--bg': bg, '--fg': fg }, at);
+  const total = names.length;
+  let shown = -1;
+  const show = (n: number) => {
+    const i = Math.min(total, Math.max(1, Math.round(n))) - 1;
+    if (i === shown) return;
+    if (shown >= 0) {
+      shots[shown].style.visibility = 'hidden';
+      sfx.tick(i / total);
+    }
+    shots[i].style.visibility = 'visible';
+    shown = i;
+    const label = String(i + 1).padStart(2, '0');
+    num.textContent = label;
+    cnt.textContent = label;
+    name.textContent = names[i];
+  };
 
-  gsap.set([el.ring, ...el.rays, ...el.bigs, ...el.org, ...el.service, el.bar, ...el.kind, el.count, ...el.dots], {
-    autoAlpha: 0,
-  });
+  gsap.set(root, { '--bg': PAPER, '--fg': INK });
+  gsap.set(rules.slice(0, 2), { scaleX: 0 });
+  gsap.set(rules.slice(2), { scaleY: 0 });
+  gsap.set(corners, { yPercent: 110, autoAlpha: 1 });
+  gsap.set(wordIn, { yPercent: 110, autoAlpha: 1 });
+  gsap.set(chars.flat(), { yPercent: 115, autoAlpha: 1 });
+  gsap.set(subIn, { yPercent: 115, autoAlpha: 1 });
+  gsap.set(sub, { '--u': 0 });
+
   const tl = gsap.timeline({ onComplete: onTitleDone });
 
-  // 1. shock ring and rays
-  tl.fromTo(el.ring, { autoAlpha: 1, scale: 0 }, { scale: 2.4, autoAlpha: 0, duration: 0.8, ease: 'expo.out' }, 0.05);
-  el.rays.forEach((r, i) => {
-    tl.fromTo(
-      r,
-      { autoAlpha: 1, scaleX: 0, x: 0, rotation: (360 / el.rays.length) * i },
-      { scaleX: 1, duration: 0.25, ease: 'expo.out' },
-      0.08,
-    ).to(r, { x: 520, autoAlpha: 0, duration: 0.45, ease: 'power3.in' }, 0.28);
+  // The picture is cut on the beat grid of the track (lib/splash-sound.ts, 125 BPM): bar 1
+  // is the three words, bar 2 the title, bar 3 the works, bar 4 the last one. beat(1) is the
+  // downbeat of bar 1, one beat after the start.
+  const beat = (n: number) => n * BEAT;
+
+  // 1. a frame is drawn in hairlines, the four corner labels slide up
+  tl.to(rules.slice(0, 2), { scaleX: 1, duration: 0.7, ease: 'expo.out' }, 0.05)
+    .to(rules.slice(2), { scaleY: 1, duration: 0.7, ease: 'expo.out' }, 0.05)
+    .to(corners, { yPercent: 0, duration: 0.6, ease: 'expo.out', stagger: 0.07 }, 0.2);
+
+  // 2. three words, three colours, one per beat, each cut in from a different side
+  tl.to(wordIn[0], { yPercent: 0, duration: 0.42, ease: 'expo.out' }, beat(1))
+    .to(wordIn[0], { yPercent: -110, duration: 0.24, ease: 'expo.in' }, beat(2) - 0.03);
+  theme(beat(2), RED, INK);
+  tl.fromTo(wordIn[1], { yPercent: -110 }, { yPercent: 0, duration: 0.38, ease: 'expo.out', immediateRender: false }, beat(2))
+    .to(wordIn[1], { xPercent: -110, duration: 0.24, ease: 'expo.in' }, beat(3) - 0.03);
+  theme(beat(3), INK, PAPER);
+  tl.fromTo(wordIn[2], { xPercent: 110, yPercent: 0 }, { xPercent: 0, duration: 0.38, ease: 'expo.out', immediateRender: false }, beat(3))
+    .to(wordIn[2], { yPercent: 110, duration: 0.24, ease: 'expo.in' }, beat(5) - 0.24);
+
+  // 3. the drop: back to paper, the service name in two lines, each character out of its mask
+  theme(beat(5), PAPER, INK);
+  chars.forEach((line, li) => {
+    tl.to(line, { yPercent: 0, duration: 0.8, ease: 'expo.out', stagger: 0.045 }, beat(5) + li * 0.16);
   });
-  flash(0.05, 0.35);
+  // (these finish before the title leaves on beat 8, so entry and exit never overlap)
+  tl.to(sub, { '--u': 1, duration: 0.6, ease: 'expo.inOut' }, beat(6) + 0.24)
+    .to(subIn, { yPercent: 0, duration: 0.5, ease: 'expo.out', stagger: 0.08 }, beat(6) + 0.36);
 
-  // 2. 未来 / 技術 / 研究所 slammed in one after another, each with a hit
-  el.bigs.forEach((w, i) => {
-    const at = 0.35 + i * 0.36;
-    tl.fromTo(
-      w,
-      { autoAlpha: 0, scale: 3.4, rotation: i % 2 ? 14 : -14, filter: 'blur(18px)' },
-      { autoAlpha: 1, scale: 1, rotation: i % 2 ? -3 : 3, filter: 'blur(0px)', duration: 0.22, ease: 'power4.in' },
-      at,
-    ).to(w, { scale: 0.25, y: -150, autoAlpha: 0, duration: 0.18, ease: 'power3.in' }, at + 0.3);
-    shake(at + 0.22, 12);
-    flash(at + 0.2, 0.18);
-  });
-
-  // the three words land as the lab's name
-  tl.fromTo(
-    el.org,
-    { autoAlpha: 0, y: -60, scale: 1.6, rotation: () => rand(-30, 30) },
-    { autoAlpha: 1, y: 0, scale: 1, rotation: 0, duration: 0.7, ease: 'bounce.out', stagger: 0.035 },
-    1.4,
-  );
-
-  // 3. デジタル広報支援サービス: every character leaps in and lands on a spring
-  tl.fromTo(
-    el.service,
-    { autoAlpha: 0, yPercent: 160, scale: 0.2, rotation: () => rand(-60, 60) },
-    {
-      autoAlpha: 1,
-      yPercent: 0,
-      scale: 1,
-      rotation: 0,
-      duration: 1.1,
-      ease: 'elastic.out(1.1, 0.42)',
-      stagger: { each: 0.045, from: 'center' },
-    },
-    1.75,
-  );
-  shake(2.05, 14);
-  flash(2.05, 0.3);
-  // a burst of RGB split and skew, like a glitch pass
-  tl.to(
-    el.service,
-    {
-      keyframes: [
-        { textShadow: '5px 0 #ff2d78, -5px 0 #19e3ff', skewX: -14, x: () => rand(-10, 10), duration: 0.05 },
-        { textShadow: '-4px 0 #ff2d78, 4px 0 #19e3ff', skewX: 10, x: () => rand(-8, 8), duration: 0.05 },
-        { textShadow: '2px 0 #ff2d78, -2px 0 #19e3ff', skewX: -4, x: 0, duration: 0.05 },
-        { textShadow: '0px 0 rgba(0,0,0,0)', skewX: 0, x: 0, duration: 0.06 },
-      ],
-    },
-    2.75,
-  );
-  // then the name dances: a travelling wave of hops with a little squash
-  tl.to(
-    el.service,
-    {
-      keyframes: [
-        { yPercent: -30, scaleY: 1.12, scaleX: 0.92, rotation: () => rand(-8, 8), duration: 0.16, ease: 'power2.out' },
-        { yPercent: 0, scaleY: 0.86, scaleX: 1.1, rotation: 0, duration: 0.14, ease: 'power2.in' },
-        { scaleY: 1, scaleX: 1, duration: 0.12, ease: 'back.out(3)' },
-      ],
-      stagger: { each: 0.045, repeat: 1, repeatDelay: 0.05 },
-    },
-    3.0,
-  );
-
-  // 4. WEBSITE PORTFOLIO flips up behind a colour wipe
-  tl.fromTo(el.bar, { autoAlpha: 1, scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 0.3, ease: 'expo.inOut' }, 3.1)
-    .set(el.bar, { transformOrigin: '100% 50%' }, 3.4)
-    .to(el.bar, { scaleX: 0, duration: 0.3, ease: 'expo.inOut' }, 3.42)
-    .fromTo(
-      el.kind,
-      { autoAlpha: 0, rotationX: -100, yPercent: 60, transformOrigin: '50% 100%' },
-      { autoAlpha: 1, rotationX: 0, yPercent: 0, duration: 0.6, ease: 'back.out(2.6)', stagger: 0.028 },
-      3.36,
-    );
-
-  // 5. works counter, 01 → 18, then a punch
+  // 4. the title leaves the way it came; the works are cut past, faster and faster
+  tl.to(chars.flat(), { yPercent: -115, duration: 0.3, ease: 'expo.in', stagger: { each: 0.01, from: 'start' } }, beat(9) - 0.48)
+    .to(subIn, { yPercent: -115, duration: 0.25, ease: 'expo.in' }, beat(9) - 0.48)
+    .to(sub, { '--u': 0, duration: 0.3, ease: 'expo.in' }, beat(9) - 0.48);
+  theme(beat(9), INK, PAPER);
+  tl.set(works, { visibility: 'visible' }, beat(9))
+    .add(() => show(1), beat(9))
+    .to(shotBox, { clipPath: 'inset(0 0 0% 0)', duration: 0.4, ease: 'expo.out' }, beat(9));
   const counter = { n: 1 };
-  tl.set(el.count, { autoAlpha: 1 }, 3.9).to(
+  tl.to(
     counter,
-    {
-      n: names.length,
-      duration: 1.3,
-      ease: 'power1.in',
-      onUpdate() {
-        const i = Math.max(1, Math.round(counter.n));
-        el.num.textContent = String(i).padStart(2, '0');
-        el.name.textContent = names[i - 1];
-      },
-    },
-    3.9,
+    { n: total, duration: beat(13) - beat(9) - 0.24, ease: 'power2.in', onUpdate: () => show(counter.n) },
+    beat(9) + 0.24,
   );
+
+  // 5. the last one lands on vermilion, on the downbeat of bar 4
+  theme(beat(13), RED, INK);
   tl.add(() => {
-    el.num.textContent = String(names.length);
-    el.name.textContent = 'WORKS — ブラウザで動く制作サンプル';
-  }, 5.22)
-    .fromTo(el.count, { scale: 1.9 }, { scale: 1, duration: 0.7, ease: 'elastic.out(1.2, 0.35)', immediateRender: false }, 5.22)
-    .fromTo(
-      el.dots,
-      { autoAlpha: 1, x: 0, y: 0, scale: 1 },
-      {
-        x: () => rand(-420, 420),
-        y: () => rand(-260, 260),
-        scale: 0,
-        autoAlpha: 0,
-        duration: 0.9,
-        ease: 'expo.out',
-        immediateRender: false,
-      },
-      5.22,
-    )
-    .fromTo(
-      el.ring,
-      { autoAlpha: 0.9, scale: 0 },
-      { scale: 2, autoAlpha: 0, duration: 0.7, ease: 'expo.out', immediateRender: false },
-      5.22,
-    );
-  shake(5.22, 9);
-  flash(5.22, 0.22);
-  tl.to({}, { duration: 0.5 }); // a beat to read the finished card
+    name.textContent = `WORKS — ブラウザで動く制作サンプル`;
+  }, beat(13));
+  tl.to({}, { duration: 0.75 }, beat(13)); // a beat to read it
+
+  // sound, on the same clock (silent until the visitor turns it on)
+  const cue = (at: number, fn: () => void) => tl.add(fn, at);
+  cue(0.02, () => sfx.music()); // bar 1 lands one beat later
+  cue(0.05, () => sfx.draw());
+  [1, 1.189, 0.891].forEach((ratio, i) => cue(beat(i + 1) + 0.03, () => sfx.slam(ratio))); // D, F, C
+  [beat(2) - 0.03, beat(3) - 0.03, beat(5) - 0.24].forEach((at) => cue(at, () => sfx.whoosh('up', 0.24, 0.3)));
+  chars.forEach((line, li) =>
+    line.forEach((_, i) => cue(beat(5) + li * 0.16 + i * 0.045 + 0.06, () => sfx.pluck(i + li * 3))),
+  );
+  cue(beat(6) + 0.24, () => sfx.whoosh('up', 0.5, 0.2));
+  cue(beat(6) + 0.36, () => sfx.pluck(9));
+  cue(beat(6) + 0.44, () => sfx.pluck(12));
+  cue(beat(9) - 0.48, () => sfx.whoosh('down', 0.4, 0.28));
+  cue(beat(9), () => sfx.slam(0.667)); // G
+  cue(beat(13), () => sfx.finale());
 
   return {
     exit(onGone: () => void) {
       tl.kill();
-      gsap.killTweensOf([el.stage, ...el.service]);
-      const max = Math.hypot(innerWidth, innerHeight);
+      gsap.killTweensOf([root, lead, num, shotCol, shotBox]);
       const out = gsap.timeline({ onComplete: onGone });
+      sfx.whoosh('down', 0.35, 0.3);
+      sfx.musicStop(1.1);
+      out.add(() => sfx.lift(), 0.3);
+      if (lead) gsap.set(lead, { visibility: 'visible', clipPath: 'inset(0 0 0% 0)' });
+      // the type drops away, then the curtain lifts, the vermilion strip a beat behind it
       out
-        .to([...el.org, ...el.service, ...el.kind, el.count], {
-          x: () => rand(-600, 600),
-          y: () => rand(-400, 400),
-          rotation: () => rand(-200, 200),
-          scale: () => rand(0.2, 1.8),
-          autoAlpha: 0,
-          duration: 0.6,
-          ease: 'power3.in',
-          stagger: { each: 0.008, from: 'center' },
-        })
-        .fromTo(el.flash, { opacity: 0 }, { opacity: 0.5, duration: 0.12 }, 0.45)
-        .to(el.flash, { opacity: 0, duration: 0.3 }, 0.6)
-        .fromTo(el.root, { '--r': '0px' }, { '--r': `${max}px`, duration: 0.95, ease: 'expo.inOut' }, 0.5);
+        .to([num, shotCol, ...corners], { yPercent: 110, duration: 0.35, ease: 'expo.in', stagger: 0.02 }, 0)
+        .to(root, { clipPath: 'inset(0 0 100% 0)', duration: 0.85, ease: 'expo.inOut' }, 0.3);
+      if (lead) out.to(lead, { clipPath: 'inset(0 0 100% 0)', duration: 0.85, ease: 'expo.inOut' }, 0.42);
+    },
+    // replay from the top (used when the visitor turns sound on part-way through)
+    restart() {
+      if (shown >= 0) {
+        shots[shown].style.visibility = 'hidden';
+        shown = -1;
+      }
+      tl.restart();
     },
     kill() {
       tl.kill();
+      if (lead) gsap.set(lead, { visibility: 'hidden' });
     },
   };
 }

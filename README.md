@@ -8,6 +8,8 @@
 
 - `components/studio/`: トップの各セクション（header / hero / showcase / works / contact）と依頼ガイド（guide / stacks / check）
 - `lib/scenes/aquarium/`: ヒーローの熱帯魚水槽（WebGL）。魚は `tools/blender/fish.py`、石と流木は `tools/blender/hardscape.py` でBlenderから生成（`tools/blender/aquarium_build.sh` で `public/models/aquarium/` に再出力、Draco圧縮）。泳ぎは頂点シェーダ（体の波・ひれ）、群れはboids、水面の揺れで屈折した光（コースティクス）を計算してランプの光に掛け、影の中では消える。ガラスに近づくと魚が寄り、たたくと散る
+- `components/studio/splash.tsx` / `lib/splash.ts`: トップの開幕演出。紙の白・インクの黒・朱色1色だけで組んだタイポグラフィのタイトル映像（GSAP、`lib/splash.ts` が楽譜）。罫線が枠を描く → 「未来」「技術」「研究所」を画面いっぱいに一語ずつ、色を切り替えながら打つ → デジタル広報支援サービスをマスクから1文字ずつ滑り上げる → 18作品の実画面を番号とともに加速しながらカット → 朱色の「18」。退場はカーテンが上がり、朱色の帯が少し遅れて続く。発光・ぼかし・グリッチ・バウンドは使わない（AIっぽく見えるため）。動きを減らす設定では完成したタイトルだけを見せてフェードする。`?splash` を付けると必ず再生。
+  - 音（`lib/splash-sound.ts`）: 音声ファイルは使わず、Web Audio で合成したBGM（125BPM・Dマイナー、キック・ベース・パッド・アルペジオ）と効果音。映像は0.48秒刻みの拍に合わせて切る（`lib/splash.ts` の `beat(n)`。1小節目＝3語、2小節目＝タイトル、3小節目＝作品カット、4小節目＝最後の1本）。ブラウザは操作前の音を許さないため標準は無音で、右下の「音をつけて再生」を押すと最初から音付きで再生し直す。動きを減らす設定ではボタンも音も出さない
 - `lib/studio.ts`: 目的別の分類、各作品の技術タグ（`workMeta.tech`）、代表作（`featured`）と一覧の並び順（`workOrder`）、サービス、料金、流れ、FAQ、**フォームの送信先 `contactEndpoint`**
 - `app/studio.css`: トップと相談ボタンのスタイル
 - `public/images/works/<slug>-desktop.jpg / -mobile.jpg`: 各作品の実画面キャプチャ（作品を変えたら撮り直す。`/works/<slug>?embed=1` を 1440×900 と 390×844@2x で、スクロールバー非表示で撮影）

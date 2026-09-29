@@ -1,16 +1,15 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { projects } from '@/lib/portfolio';
+import { BASE } from '@/lib/base-path';
+import { createSplashSound } from '@/lib/splash-sound';
 
-const ORG = '未来技術研究所';
 const WORDS = ['未来', '技術', '研究所'];
-const SERVICE = 'デジタル広報支援サービス';
-const KIND = 'WEBSITE PORTFOLIO';
-const TOTAL = `${projects.length}`;
-const TOTAL_NAME = 'WORKS — ブラウザで動く制作サンプル';
+const LINES = ['デジタル広報', '支援サービス'];
+const EM = new Set([4, 5]); // 広報, set in vermilion
+const TOTAL = projects.length;
+const ARIA = '未来技術研究所 デジタル広報支援サービス ウェブサイト ポートフォリオ';
 const MAX_MS = 10000; // never hold the page longer than this, even if the tank is still loading
-const RAYS = 12;
-const DOTS = 16;
 
 // Runs while the HTML is parsed, before first paint, so a skipped splash never shows for a
 // frame. It plays whenever the top page is opened or reloaded; it stays away when the
@@ -20,8 +19,10 @@ const decide = `(function(){var d=document.documentElement;try{var q=location.se
 
 export default function Splash() {
   const [phase, setPhase] = useState<'play' | 'out' | 'gone'>('play');
+  const [sound, setSound] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const leaveRef = useRef<() => void>(() => {});
+  const soundRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const html = document.documentElement;
@@ -32,9 +33,8 @@ export default function Splash() {
     }
     html.style.overflow = 'hidden';
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const q = <T extends Element>(s: string) => el.querySelector(s) as unknown as T;
-    const qa = (s: string) => [...el.querySelectorAll<HTMLElement>(s)];
-    let api: { exit: (done: () => void) => void; kill: () => void } | null = null;
+    const sfx = createSplashSound();
+    let api: { exit: (done: () => void) => void; kill: () => void; restart: () => void } | null = null;
     let titleDone = reduced;
     let leaving = false;
     let dead = false;
@@ -43,6 +43,7 @@ export default function Splash() {
     let finish = 0;
 
     const gone = () => {
+      sfx.dispose();
       if (dead) return;
       html.dataset.splash = 'done';
       html.style.overflow = '';
@@ -73,27 +74,13 @@ export default function Splash() {
         .then(({ playSplash }) => {
           if (dead || leaving) return;
           api = playSplash(
-            {
-              root: el,
-              stage: q('.sx-stage'),
-              ring: q('.sx-ring'),
-              rays: qa('.sx-ray'),
-              bigs: qa('.sx-big'),
-              org: qa('.sx-org span'),
-              service: qa('.sx-service span'),
-              bar: q('.sx-bar'),
-              kind: qa('.sx-kind span'),
-              num: q('.sx-num'),
-              name: q('.sx-name'),
-              count: q('.sx-count'),
-              dots: qa('.sx-dot'),
-              flash: q('.sx-flash'),
-            },
+            el,
             projects.map((p) => p.name),
             () => {
               titleDone = true;
               check();
             },
+            sfx,
           );
         })
         .catch(() => {
@@ -101,13 +88,34 @@ export default function Splash() {
           check();
         });
 
+    // Sound stays off until the visitor asks: browsers keep audio silent before a click, and
+    // turning it on replays the sequence from the top so the cues line up.
+    soundRef.current = async () => {
+      if (sfx.on) {
+        sfx.mute();
+        setSound(false);
+        return;
+      }
+      const ok = await sfx.enable();
+      setSound(ok);
+      if (ok && api && !leaving) {
+        titleDone = reduced;
+        clearTimeout(poll);
+        clearTimeout(fallback);
+        fallback = window.setTimeout(leave, MAX_MS);
+        api.restart();
+      }
+    };
+
     const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement | null)?.closest?.('.st-splash-sound')) return;
       if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') leave();
     };
     addEventListener('keydown', onKey);
     return () => {
       dead = true;
       api?.kill();
+      sfx.dispose();
       clearTimeout(poll);
       clearTimeout(fallback);
       clearTimeout(finish);
@@ -124,59 +132,89 @@ export default function Splash() {
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: decide }} suppressHydrationWarning />
+      <i className="sp-lead" aria-hidden />
       <div ref={root} className={`st-splash ${phase === 'out' ? 'is-out' : ''}`} onClick={skip}>
-        <div className="st-splash-light" aria-hidden />
-        <div className="sx-stage" role="img" aria-label={`${ORG} ${SERVICE} ウェブサイト ポートフォリオ`}>
-          <div className="sx-burst" aria-hidden>
-            <i className="sx-ring" />
-            {Array.from({ length: RAYS }, (_, i) => (
-              <i key={i} className="sx-ray" />
+        <div role="img" aria-label={ARIA} style={{ position: 'absolute', inset: 0 }}>
+          <div aria-hidden>
+            {['t', 'b', 'l', 'r'].map((k) => (
+              <i key={k} className={`sp-rule ${k}`} />
             ))}
-            {Array.from({ length: DOTS }, (_, i) => (
-              <i key={i} className="sx-dot" />
-            ))}
-          </div>
-          <div className="sx-bigs" aria-hidden>
-            {WORDS.map((w) => (
-              <span key={w} className="sx-big">
-                {w}
+            <p className="sp-corner tl">
+              <span>未来技術研究所</span>
+            </p>
+            <p className="sp-corner tr">
+              <span>2026</span>
+            </p>
+            <p className="sp-corner bl">
+              <span>DIGITAL PR SUPPORT</span>
+            </p>
+            <p className="sp-corner br">
+              <span>
+                <b className="sp-cnt">00</b> / {TOTAL}
               </span>
-            ))}
-          </div>
-          <div className="sx-card" aria-hidden>
-            <p className="sx-org">
-              {[...ORG].map((c, i) => (
-                <span key={i}>{c}</span>
+            </p>
+            <div className="sp-words">
+              {WORDS.map((w) => (
+                <p key={w} className="sp-word">
+                  <span>{w}</span>
+                </p>
               ))}
-            </p>
-            <p className="sx-service">
-              {[...SERVICE].map((c, i) => (
-                <span key={i}>{c}</span>
+            </div>
+            <div className="sp-title">
+              {LINES.map((line, li) => (
+                <p key={line} className="sp-line">
+                  {[...line].map((c, i) => (
+                    <span key={i} className={li === 0 && EM.has(i) ? 'em' : undefined}>
+                      {c}
+                    </span>
+                  ))}
+                </p>
               ))}
-            </p>
-            <p className="sx-kind">
-              <i className="sx-bar" />
-              {[...KIND].map((c, i) => (
-                <span key={i}>{c === ' ' ? ' ' : c}</span>
-              ))}
-            </p>
-            <p className="sx-count">
-              <b className="sx-num">{TOTAL}</b>
-              <span className="sx-name">{TOTAL_NAME}</span>
-            </p>
+              <div className="sp-sub">
+                <span>
+                  <i>WEBSITE PORTFOLIO</i>
+                </span>
+                <span>
+                  <i>{TOTAL} WORKS</i>
+                </span>
+              </div>
+            </div>
+            <div className="sp-works">
+              <b className="sp-num">01</b>
+              <div className="sp-shotcol">
+                <div className="sp-shot">
+                  {projects.map((p) => (
+                    <img key={p.slug} src={`${BASE}/images/works/${p.slug}-desktop.jpg`} alt="" decoding="async" />
+                  ))}
+                </div>
+                <p className="sp-name" />
+              </div>
+            </div>
           </div>
         </div>
-        <i className="sx-flash" aria-hidden />
-        <button
-          type="button"
-          className="st-splash-skip"
-          onClick={(e) => {
-            e.stopPropagation();
-            skip();
-          }}
-        >
-          スキップ
-        </button>
+        <div className="sp-ctrl">
+          <button
+            type="button"
+            className="st-splash-sound"
+            aria-pressed={sound}
+            onClick={(e) => {
+              e.stopPropagation();
+              soundRef.current();
+            }}
+          >
+            {sound ? '音を消す' : '音をつけて再生'}
+          </button>
+          <button
+            type="button"
+            className="st-splash-skip"
+            onClick={(e) => {
+              e.stopPropagation();
+              skip();
+            }}
+          >
+            スキップ
+          </button>
+        </div>
       </div>
     </>
   );

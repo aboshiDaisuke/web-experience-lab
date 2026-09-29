@@ -2257,219 +2257,257 @@ html:has(.studio) {
   text-shadow: 0 1px 10px rgba(3, 14, 16, 0.65);
 }
 
-/* splash: kinetic type for 未来技術研究所 / デジタル広報支援サービス / WEBSITE PORTFOLIO.
-   The motion lives in lib/splash.ts (GSAP); this sheet sets the layout and the start states. */
+/* splash: a typographic title sequence in paper white, ink black and one vermilion.
+   Flat colour, hard cuts, type sliding up out of masks. The motion lives in lib/splash.ts (GSAP);
+   this sheet sets the layout and the start states. */
 .st-splash {
-  --r: 0px;
+  --bg: #f3f1ec;
+  --fg: #111114;
+  --red: #f2411b;
   position: fixed;
   inset: 0;
   z-index: 200;
-  display: grid;
-  place-items: center;
   overflow: hidden;
-  background:
-    radial-gradient(80% 60% at 50% 115%, #2a2f86 0%, transparent 60%),
-    radial-gradient(60% 50% at 50% -10%, #1b1f55 0%, transparent 60%),
-    #0a0c22;
-  color: #fff;
+  background: var(--bg);
+  color: var(--fg);
   cursor: pointer;
-  /* the exit opens an iris from the centre */
-  -webkit-mask: radial-gradient(circle at 50% 50%, transparent var(--r), #000 calc(var(--r) + 1px));
-  mask: radial-gradient(circle at 50% 50%, transparent var(--r), #000 calc(var(--r) + 1px));
+  clip-path: inset(0 0 0 0);
 }
-html[data-splash='skip'] .st-splash {
+html[data-splash='skip'] .st-splash,
+html[data-splash='skip'] .sp-lead {
   display: none;
 }
-.st-splash-light {
-  position: absolute;
-  inset: -20%;
-  background:
-    radial-gradient(26% 22% at 28% 40%, rgba(90, 110, 255, 0.28), transparent 70%),
-    radial-gradient(24% 20% at 72% 62%, rgba(255, 45, 120, 0.14), transparent 70%),
-    radial-gradient(28% 18% at 55% 22%, rgba(25, 227, 255, 0.12), transparent 70%);
-  filter: blur(12px);
-  animation: st-splash-drift 6s ease-in-out infinite alternate;
-}
-@keyframes st-splash-drift {
-  from {
-    transform: translate3d(-4%, 3%, 0) rotate(0deg) scale(1);
-  }
-  to {
-    transform: translate3d(4%, -3%, 0) rotate(12deg) scale(1.12);
-  }
-}
-.sx-stage {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  perspective: 900px;
-}
-.sx-stage > * {
-  grid-area: 1 / 1;
-}
-/* shock ring, rays and the particles of the final punch */
-.sx-burst {
-  position: relative;
-  width: 0;
-  height: 0;
-}
-.sx-ring {
-  position: absolute;
-  left: -160px;
-  top: -160px;
-  width: 320px;
-  height: 320px;
-  border: 2px solid rgba(169, 180, 255, 0.9);
-  border-radius: 50%;
-  box-shadow:
-    0 0 40px rgba(120, 140, 255, 0.6),
-    inset 0 0 30px rgba(120, 140, 255, 0.4);
+/* the vermilion strip that trails the curtain when it lifts */
+.sp-lead {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: #f2411b;
   visibility: hidden;
+  clip-path: inset(0 0 0 0);
+  pointer-events: none;
 }
-.sx-ray {
+.sp-rule {
   position: absolute;
-  left: 0;
-  top: -1px;
-  width: 240px;
-  height: 2px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0), #fff 60%, rgba(25, 227, 255, 0.9));
+  background: currentColor;
+  opacity: 0.9;
+}
+.sp-rule.t,
+.sp-rule.b {
+  left: 20px;
+  right: 20px;
+  height: 1px;
   transform-origin: 0 50%;
-  visibility: hidden;
 }
-.sx-dot {
+.sp-rule.t {
+  top: 20px;
+}
+.sp-rule.b {
+  bottom: 20px;
+}
+.sp-rule.l,
+.sp-rule.r {
+  top: 20px;
+  bottom: 20px;
+  width: 1px;
+  transform-origin: 50% 0;
+}
+.sp-rule.l {
+  left: 20px;
+}
+.sp-rule.r {
+  right: 20px;
+}
+.sp-corner {
+  margin: 0;
   position: absolute;
-  left: -5px;
-  top: -5px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 14px rgba(169, 180, 255, 0.9);
+  overflow: hidden;
+  font:
+    700 14px / 1.3 var(--gothic);
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}
+.sp-corner span {
+  display: block;
   visibility: hidden;
 }
-.sx-dot:nth-child(3n) {
-  background: #19e3ff;
+.sp-corner.tl {
+  top: 34px;
+  left: 34px;
 }
-.sx-dot:nth-child(3n + 1) {
-  background: #ff2d78;
+.sp-corner.tr {
+  top: 34px;
+  right: 34px;
 }
-/* 未来 / 技術 / 研究所, slammed in at full size */
-.sx-bigs {
+.sp-corner.bl {
+  bottom: 34px;
+  left: 34px;
+}
+.sp-corner.br {
+  bottom: 34px;
+  right: 34px;
+  font-variant-numeric: tabular-nums;
+}
+/* 未来 / 技術 / 研究所, struck one at a time at the size of the screen */
+.sp-words {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
 }
-.sx-big {
-  grid-area: 1 / 1;
-  font:
-    900 clamp(84px, 17vw, 260px) / 1 var(--gothic);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  visibility: hidden;
-  text-shadow: 0 0 60px rgba(120, 140, 255, 0.45);
-}
-.sx-big:nth-child(2) {
-  color: #19e3ff;
-}
-.sx-big:nth-child(3) {
-  color: #ff2d78;
-}
-/* the finished card */
-.sx-card {
-  display: grid;
-  justify-items: center;
-  gap: clamp(14px, 2vw, 24px);
-  padding: 0 16px;
-  text-align: center;
-}
-.sx-card p {
+.sp-word {
   margin: 0;
+  grid-area: 1 / 1;
+  overflow: hidden;
+  padding: 0.04em 0.02em 0.1em;
+  font:
+    900 min(31vw, 44vh) / 1 var(--gothic);
+  letter-spacing: -0.02em;
   white-space: nowrap;
 }
-.sx-org span,
-.sx-service span,
-.sx-kind span {
+.sp-word span {
+  display: block;
+  visibility: hidden;
+}
+/* the title: two lines, set left, each char rising out of its line's mask */
+.sp-title {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  padding: 0 clamp(34px, 6vw, 96px);
+}
+.sp-line {
+  margin: 0;
+  overflow: hidden;
+  padding: 0.02em 0 0.1em;
+  font:
+    900 min(12.6vw, 21vh) / 1.02 var(--gothic);
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+.sp-line span {
   display: inline-block;
   visibility: hidden;
 }
-.sx-org {
-  font:
-    700 clamp(18px, 2vw, 26px) / 1 var(--gothic);
-  letter-spacing: 0.5em;
-  margin-right: -0.5em;
-  color: rgba(255, 255, 255, 0.9);
+.sp-line .em {
+  color: var(--red);
 }
-.sx-service {
-  font:
-    900 clamp(34px, 6.4vw, 96px) / 1.15 var(--gothic);
-  letter-spacing: 0.02em;
-}
-.sx-service span {
-  transform-origin: 50% 100%;
-}
-.sx-kind {
+.sp-sub {
   position: relative;
-  font:
-    400 clamp(28px, 4.4vw, 64px) / 1 'Anton', 'Impact', 'Arial Narrow', sans-serif;
-  letter-spacing: 0.08em;
-  margin-right: -0.08em;
-  color: #a9b4ff;
-}
-.sx-bar {
-  position: absolute;
-  inset: -0.08em -0.3em;
-  background: linear-gradient(90deg, #4452e0, #19e3ff 60%, #ff2d78);
-  visibility: hidden;
-}
-.sx-count {
-  display: inline-flex;
+  display: flex;
+  justify-content: space-between;
   align-items: baseline;
-  gap: 0.8em;
-  font-size: 16px;
-  letter-spacing: 0.14em;
-  color: rgba(255, 255, 255, 0.9);
+  margin-top: clamp(10px, 2vh, 22px);
+  padding-top: clamp(10px, 1.6vh, 18px);
+  font:
+    400 clamp(22px, 3vw, 44px) / 1 'Anton', 'Impact', 'Arial Narrow', sans-serif;
+  letter-spacing: 0.08em;
+}
+.sp-sub::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: currentColor;
+  transform-origin: 0 50%;
+  transform: scaleX(var(--u, 0));
+}
+.sp-sub > span {
+  overflow: hidden;
+  display: block;
+}
+.sp-sub > span > i {
+  display: block;
+  font-style: normal;
   visibility: hidden;
 }
-.sx-num {
-  min-width: 1.6em;
-  font:
-    400 2.2em / 1 'Anton', 'Impact', sans-serif;
-  letter-spacing: 0.02em;
-  color: #19e3ff;
+.sp-sub > span:first-child {
+  color: var(--red);
 }
-.sx-flash {
+/* the works, cut fast: a big number and the real screen */
+.sp-works {
   position: absolute;
   inset: 0;
-  background: #fff;
-  opacity: 0;
-  pointer-events: none;
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  align-items: center;
+  gap: clamp(20px, 4vw, 64px);
+  padding: 9vh clamp(34px, 6vw, 96px);
+  visibility: hidden;
 }
-.st-splash-skip {
+.sp-num {
+  display: block;
+  font:
+    400 min(40vw, 62vh) / 0.86 'Anton', 'Impact', 'Arial Narrow', sans-serif;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  padding: 0.06em 0 0.1em;
+}
+.sp-shotcol {
+  min-width: 0;
+}
+.sp-shot {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #d9d6ce;
+  clip-path: inset(0 0 100% 0);
+}
+.sp-shot img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  visibility: hidden;
+}
+.sp-name {
+  margin: 14px 0 0;
+  font:
+    700 clamp(16px, 1.6vw, 22px) / 1.3 var(--gothic);
+  letter-spacing: 0.1em;
+  min-height: 1.3em;
+}
+.sp-ctrl {
   position: absolute;
   z-index: 2;
-  right: clamp(16px, 3vw, 40px);
-  bottom: clamp(16px, 3vw, 40px);
+  right: 34px;
+  bottom: 62px;
+  display: flex;
+  gap: 10px;
+}
+.st-splash-skip,
+.st-splash-sound {
   min-height: 44px;
   padding: 0 18px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid currentColor;
   border-radius: 999px;
   font-size: 14px;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.9);
+  color: inherit;
+  opacity: 0.75;
   transition:
     background 0.3s,
-    border-color 0.3s,
     opacity 0.3s;
 }
-.st-splash-skip:hover {
-  border-color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+.st-splash-skip:hover,
+.st-splash-sound:hover {
+  opacity: 1;
+  background: rgba(127, 127, 127, 0.16);
+}
+.st-splash-sound[aria-pressed='true'] {
+  opacity: 1;
+  background: var(--fg);
+  color: var(--bg);
 }
 .st-splash.is-out {
   pointer-events: none;
 }
-.st-splash.is-out .st-splash-skip {
+.st-splash.is-out .sp-ctrl {
   opacity: 0;
 }
 /* while the splash plays, the hero copy waits; it rises in as the iris opens */
@@ -2501,33 +2539,41 @@ html[data-splash='out'] .st-hero-canvas {
   transform: none;
   transition: transform 2s cubic-bezier(0.16, 1, 0.3, 1) 0.4s;
 }
-@media (max-width: 600px) {
-  .sx-service {
-    font-size: clamp(24px, 7.6vw, 36px);
+@media (max-width: 700px) {
+  .sp-works {
+    grid-template-columns: 1fr;
+    align-content: center;
+    padding: 12vh 34px;
   }
-  .sx-org {
-    letter-spacing: 0.3em;
-    margin-right: -0.3em;
+  .sp-shotcol {
+    order: -1;
   }
-  .sx-kind {
-    font-size: clamp(26px, 8vw, 36px);
+  .sp-num {
+    font-size: min(46vw, 30vh);
   }
-  .sx-count {
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
+  .sp-line {
+    font-size: min(calc((100vw - 68px) / 6.3), 19vh);
+  }
+  .sp-ctrl {
+    right: 34px;
+    bottom: 70px;
   }
 }
-/* reduced motion: no kinetic type, just the finished card, then a fade */
+/* reduced motion: no motion, just the finished title, then a fade */
 @media (prefers-reduced-motion: reduce) {
-  .st-splash-light {
-    animation: none;
-  }
-  .sx-org span,
-  .sx-service span,
-  .sx-kind span,
-  .sx-count {
+  .sp-corner span,
+  .sp-line span,
+  .sp-sub > span > i {
     visibility: visible;
+  }
+  .sp-sub::before {
+    transform: scaleX(1);
+  }
+  .st-splash-sound {
+    display: none;
+  }
+  .sp-corner.br {
+    display: none;
   }
   .st-splash.is-out {
     opacity: 0;
